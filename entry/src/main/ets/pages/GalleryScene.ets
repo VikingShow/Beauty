@@ -3,6 +3,7 @@ import {
   Scene,
   SceneResourceFactory,
   Camera,
+  Light,
   LightType,
   SceneNodeParameters
 } from '@kit.ArkGraphics3D';
@@ -46,11 +47,33 @@ struct GalleryScene {
       const cam: Camera = await factory.createCamera(camParams);
       cam.enabled = true;
       cam.fov = 70 * Math.PI / 180;
-      cam.clearColor = { r: 0.04, g: 0.04, b: 0.10, a: 1.0 };
+      // 提亮：背景天光色，未被照亮的区域不再死黑
+      cam.clearColor = { r: 0.55, g: 0.58, b: 0.65, a: 1.0 };
       this.controller.attach(cam);
 
-      const lightParams: SceneNodeParameters = { name: 'fpLight' };
-      await factory.createLight(lightParams, LightType.DIRECTIONAL);
+      // 多盏方向光从不同角度照射，避免单光源造成大片阴暗
+      const lightTopParams: SceneNodeParameters = { name: 'lightTop' };
+      const lightTop: Light = await factory.createLight(lightTopParams, LightType.DIRECTIONAL);
+      lightTop.enabled = true;
+      // 旋转使光线从顶部往下照（quat 为绕 X 轴 -90°）
+      lightTop.rotation = { x: -0.7071, y: 0, z: 0, w: 0.7071 };
+
+      const lightFrontParams: SceneNodeParameters = { name: 'lightFront' };
+      const lightFront: Light = await factory.createLight(lightFrontParams, LightType.DIRECTIONAL);
+      lightFront.enabled = true;
+      // 默认朝 -Z（前方），保留默认旋转
+
+      const lightBackParams: SceneNodeParameters = { name: 'lightBack' };
+      const lightBack: Light = await factory.createLight(lightBackParams, LightType.DIRECTIONAL);
+      lightBack.enabled = true;
+      // 旋转 180° 绕 Y 轴：朝向 +Z（后方）
+      lightBack.rotation = { x: 0, y: 1, z: 0, w: 0 };
+
+      const lightSideParams: SceneNodeParameters = { name: 'lightSide' };
+      const lightSide: Light = await factory.createLight(lightSideParams, LightType.DIRECTIONAL);
+      lightSide.enabled = true;
+      // 旋转 90° 绕 Y 轴：朝向 -X（左侧）
+      lightSide.rotation = { x: 0, y: 0.7071, z: 0, w: 0.7071 };
 
       this.sceneInstance = scene;
       this.sceneReady = true;
