@@ -33,6 +33,7 @@ export class FirstPersonCameraController extends CameraController {
 
   private focusPoint: Vec3 = { x: 0, y: 0, z: 0 };
   private currentWaypointId: string = '';
+  private updateListener: (() => void) | undefined = undefined;
 
   constructor(
     initial: Waypoint | undefined = undefined,
@@ -43,13 +44,29 @@ export class FirstPersonCameraController extends CameraController {
     if (initial !== undefined) {
       this.position = { x: initial.position.x, y: initial.position.y, z: initial.position.z };
       this.currentWaypointId = initial.id;
-      this.yaw = this.yawFromLookAt(this.position, this.focusPoint, this.yaw);
-      this.pitch = this.pitchFromLookAt(this.position, this.focusPoint);
+      this.yaw = initial.yaw;
+      this.pitch = initial.pitch;
     }
   }
 
   getCurrentWaypointId(): string {
     return this.currentWaypointId;
+  }
+
+  getPositionX(): number {
+    return this.position.x;
+  }
+
+  getPositionZ(): number {
+    return this.position.z;
+  }
+
+  getYaw(): number {
+    return this.yaw;
+  }
+
+  setOnUpdate(callback: () => void): void {
+    this.updateListener = callback;
   }
 
   setFocusPoint(p: Vec3): void {
@@ -76,8 +93,8 @@ export class FirstPersonCameraController extends CameraController {
     this.cancelAnimation();
     this.currentWaypointId = target.id;
 
-    const endYaw: number = this.yawFromLookAt(target.position, this.focusPoint, this.yaw);
-    const endPitch: number = this.pitchFromLookAt(target.position, this.focusPoint);
+    const endYaw: number = target.yaw;
+    const endPitch: number = target.pitch;
 
     if (duration <= 0) {
       this.position = { x: target.position.x, y: target.position.y, z: target.position.z };
@@ -111,6 +128,13 @@ export class FirstPersonCameraController extends CameraController {
         this.camera.position.y = this.position.y;
         this.camera.position.z = this.position.z;
         this.camera.rotation = { x: q.x, y: q.y, z: q.z, w: q.w };
+      }
+
+      // 动画期间根据当前位置实时更新内部 yaw/pitch（用于小地图显示）
+      const intermediateYaw: number = this.yawFromQuat(q);
+      this.yaw = intermediateYaw;
+      if (this.updateListener !== undefined) {
+        this.updateListener();
       }
 
       if (raw < 1) {
@@ -151,6 +175,11 @@ export class FirstPersonCameraController extends CameraController {
     }
     const ratio: number = Math.max(-1, Math.min(1, dy / dist));
     return Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, Math.asin(ratio)));
+  }
+
+  /** 从四元数反推 yaw（绕 Y 轴角度）。 */
+  private yawFromQuat(q: Quat): number {
+    return 2 * Math.atan2(q.y, q.w);
   }
 
   private yawPitchToQuat(yaw: number, pitch: number): Quat {
@@ -201,5 +230,9 @@ export class FirstPersonCameraController extends CameraController {
     const pitch: number = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, this.pitch));
     const q: Quat = this.yawPitchToQuat(yaw, pitch);
     this.camera.rotation = { x: q.x, y: q.y, z: q.z, w: q.w };
+
+    if (this.updateListener !== undefined) {
+      this.updateListener();
+    }
   }
 }

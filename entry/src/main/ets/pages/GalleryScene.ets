@@ -9,24 +9,35 @@ import {
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
-import { TEST_WAYPOINTS, Waypoint } from '../scenes/Waypoint';
+import { GALLERY_WAYPOINTS, Waypoint } from '../scenes/Waypoint';
+import { Minimap } from '../components/Minimap';
 
 const DOMAIN = 0x0101;
+const GALLERY_WORLD_RADIUS: number = 5.5;
 
 @Entry
 @Component
 struct GalleryScene {
   @State private sceneReady: boolean = false;
   @State private errorMsg: string = '';
-  @State private currentWpId: string = TEST_WAYPOINTS[0].id;
+  @State private currentWpId: string = GALLERY_WAYPOINTS[0].id;
+  @State private playerX: number = GALLERY_WAYPOINTS[0].position.x;
+  @State private playerZ: number = GALLERY_WAYPOINTS[0].position.z;
+  @State private playerYaw: number = GALLERY_WAYPOINTS[0].yaw;
 
   private sceneInstance: Scene | undefined = undefined;
-  private controller: FirstPersonCameraController = new FirstPersonCameraController(TEST_WAYPOINTS[0]);
+  private controller: FirstPersonCameraController = new FirstPersonCameraController(GALLERY_WAYPOINTS[0]);
 
   async aboutToAppear(): Promise<void> {
+    this.controller.setOnUpdate(() => {
+      this.playerX = this.controller.getPositionX();
+      this.playerZ = this.controller.getPositionZ();
+      this.playerYaw = this.controller.getYaw();
+    });
+
     try {
       const scene: Scene = await Scene.load(
-        $rawfile('gltf/DamagedHelmet/glTF/DamagedHelmet.gltf')
+        $rawfile('gltf/gallery/scene.gltf')
       );
 
       const factory: SceneResourceFactory = scene.getResourceFactory();
@@ -103,16 +114,31 @@ struct GalleryScene {
             router.back();
           })
 
-        Text('Phase 1B · 展厅漫游  |  拖动转视角 · 下方切换观察点')
+        Text('Phase 1C · 圆形画廊  |  拖动转视角 · 点小地图或下方按钮切换')
           .fontSize(14)
           .fontColor('#d4b678')
           .margin({ left: 12 })
       }
       .position({ x: 20, y: 20 })
 
+      // 右上角小地图
+      Minimap({
+        waypoints: GALLERY_WAYPOINTS,
+        currentWaypointId: this.currentWpId,
+        playerX: this.playerX,
+        playerZ: this.playerZ,
+        playerYaw: this.playerYaw,
+        worldRadius: GALLERY_WORLD_RADIUS,
+        onWaypointTap: (wp: Waypoint) => {
+          this.teleport(wp);
+        }
+      })
+        .position({ x: '100%', y: 20 })
+        .markAnchor({ x: 200, y: 0 })
+
       // 底部航点切换条
       Row({ space: 12 }) {
-        ForEach(TEST_WAYPOINTS, (wp: Waypoint) => {
+        ForEach(GALLERY_WAYPOINTS, (wp: Waypoint) => {
           Button(wp.name, { type: ButtonType.Capsule })
             .height(40)
             .fontSize(14)

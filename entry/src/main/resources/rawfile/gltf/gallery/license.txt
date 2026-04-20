@@ -1,0 +1,11 @@
+Model Information:
+* title:	VR Round Art Gallery
+* source:	https://sketchfab.com/3d-models/vr-round-art-gallery-3af1b679f52042fc9c40c901a6fed81b
+* author:	Maxim Mavrichev (https://sketchfab.com/mvrc.art)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "VR Round Art Gallery" (https://sketchfab.com/3d-models/vr-round-art-gallery-3af1b679f52042fc9c40c901a6fed81b) by Maxim Mavrichev (https://sketchfab.com/mvrc.art) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
