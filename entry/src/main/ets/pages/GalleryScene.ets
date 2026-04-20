@@ -10,11 +10,10 @@ import {
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
-import { GALLERY_WAYPOINTS, Waypoint } from '../scenes/Waypoint';
+import { GALLERY_LAYOUT, GALLERY_WAYPOINTS, Waypoint } from '../scenes/Waypoint';
 import { Minimap } from '../components/Minimap';
 
 const DOMAIN = 0x0101;
-const GALLERY_WORLD_RADIUS: number = 5.5;
 
 interface RGBA {
   r: number;
@@ -54,46 +53,39 @@ struct GalleryScene {
       const cam: Camera = await factory.createCamera(camParams);
       cam.enabled = true;
       cam.fov = 70 * Math.PI / 180;
-      // 提亮：背景天光色，未被照亮的区域不再死黑
-      cam.clearColor = { r: 0.55, g: 0.58, b: 0.65, a: 1.0 };
+      // 较暗的环境色让方向光的明暗对比更明显
+      cam.clearColor = { r: 0.18, g: 0.20, b: 0.24, a: 1.0 };
       this.controller.attach(cam);
 
-      // 多盏高强度方向光从不同角度照射
-      const brightWhite: RGBA = { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
+      // 主光（顶部偏前下方，强）+ 暖色补光（侧面，弱）+ 冷色环境补光
+      const warmWhite: RGBA = { r: 1.0, g: 0.96, b: 0.88, a: 1.0 };
+      const coolFill: RGBA = { r: 0.55, g: 0.65, b: 0.85, a: 1.0 };
 
-      const lightTopParams: SceneNodeParameters = { name: 'lightTop' };
-      const lightTop: Light = await factory.createLight(lightTopParams, LightType.DIRECTIONAL);
-      lightTop.enabled = true;
-      lightTop.color = brightWhite;
-      lightTop.intensity = 8.0;
-      lightTop.rotation = { x: -0.7071, y: 0, z: 0, w: 0.7071 };
+      // 主光：顶部稍偏南方向（quat 绕 X -75°，让光线斜照而非纯垂直，制造立体阴影感）
+      const lightKeyParams: SceneNodeParameters = { name: 'lightKey' };
+      const lightKey: Light = await factory.createLight(lightKeyParams, LightType.DIRECTIONAL);
+      lightKey.enabled = true;
+      lightKey.color = warmWhite;
+      lightKey.intensity = 8.0;
+      lightKey.rotation = { x: -0.6088, y: 0, z: 0, w: 0.7934 };
 
-      const lightFrontParams: SceneNodeParameters = { name: 'lightFront' };
-      const lightFront: Light = await factory.createLight(lightFrontParams, LightType.DIRECTIONAL);
-      lightFront.enabled = true;
-      lightFront.color = brightWhite;
-      lightFront.intensity = 5.0;
+      // 冷色补光：从北侧反向照过来，模拟天窗冷光
+      const lightFillParams: SceneNodeParameters = { name: 'lightFill' };
+      const lightFill: Light = await factory.createLight(lightFillParams, LightType.DIRECTIONAL);
+      lightFill.enabled = true;
+      lightFill.color = coolFill;
+      lightFill.intensity = 3.0;
+      // 旋转 180° 绕 Y：朝 +Z 方向
+      lightFill.rotation = { x: 0, y: 1, z: 0, w: 0 };
 
-      const lightBackParams: SceneNodeParameters = { name: 'lightBack' };
-      const lightBack: Light = await factory.createLight(lightBackParams, LightType.DIRECTIONAL);
-      lightBack.enabled = true;
-      lightBack.color = brightWhite;
-      lightBack.intensity = 5.0;
-      lightBack.rotation = { x: 0, y: 1, z: 0, w: 0 };
-
+      // 侧面暖色补光：从东侧斜下来
       const lightSideParams: SceneNodeParameters = { name: 'lightSide' };
       const lightSide: Light = await factory.createLight(lightSideParams, LightType.DIRECTIONAL);
       lightSide.enabled = true;
-      lightSide.color = brightWhite;
-      lightSide.intensity = 5.0;
-      lightSide.rotation = { x: 0, y: 0.7071, z: 0, w: 0.7071 };
-
-      const lightSide2Params: SceneNodeParameters = { name: 'lightSide2' };
-      const lightSide2: Light = await factory.createLight(lightSide2Params, LightType.DIRECTIONAL);
-      lightSide2.enabled = true;
-      lightSide2.color = brightWhite;
-      lightSide2.intensity = 5.0;
-      lightSide2.rotation = { x: 0, y: -0.7071, z: 0, w: 0.7071 };
+      lightSide.color = warmWhite;
+      lightSide.intensity = 2.5;
+      // 绕 Y 60° + 绕 X -20°：侧前方斜上
+      lightSide.rotation = { x: -0.166, y: 0.487, z: 0.094, w: 0.853 };
 
       this.sceneInstance = scene;
       this.sceneReady = true;
@@ -167,17 +159,17 @@ struct GalleryScene {
       // 右上角小地图
       Minimap({
         waypoints: GALLERY_WAYPOINTS,
+        layout: GALLERY_LAYOUT,
         currentWaypointId: this.currentWpId,
         playerX: this.playerX,
         playerZ: this.playerZ,
         playerYaw: this.playerYaw,
-        worldRadius: GALLERY_WORLD_RADIUS,
         onWaypointTap: (wp: Waypoint) => {
           this.teleport(wp);
         }
       })
         .position({ x: '100%', y: 20 })
-        .markAnchor({ x: 200, y: 0 })
+        .markAnchor({ x: 240, y: 0 })
 
       // 底部航点切换条
       Row({ space: 12 }) {

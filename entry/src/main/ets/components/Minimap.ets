@@ -1,58 +1,101 @@
-import { Waypoint } from '../scenes/Waypoint';
+import { Doorway, InternalWall, RoomLayout, Waypoint } from '../scenes/Waypoint';
 
-const MAP_SIZE: number = 180;
-const MAP_RADIUS: number = 80;
+const MAP_MAX_PX: number = 220;
 const DOT_SIZE: number = 14;
 const PLAYER_SIZE: number = 16;
+const WALL_THICKNESS: number = 3;
+
+interface WallSegment {
+  x1: number;
+  x2: number;
+}
 
 /**
- * 圆形画廊的俯视小地图。
- * - 外圈代表画廊墙壁
- * - 黄色实心圆点为当前所在航点，灰色环点为可传送航点
- * - 红色三角为玩家自身位置 + 朝向
- *
- * 坐标映射：世界 (X, Z) → 屏幕 (cx + X * scale, cy + Z * scale)
- * 上=北=−Z 方向；下=南=+Z 方向。
+ * 矩形俯视小地图，按真实房间比例绘制，
+ * 显示外墙轮廓 + 内墙（带门洞间隙）+ 航点 + 玩家朝向。
  */
 @Component
 export struct Minimap {
   waypoints: Waypoint[] = [];
+  layout: RoomLayout = { worldWidth: 1, worldDepth: 1, internalWalls: [] };
   @Prop currentWaypointId: string = '';
   @Prop playerX: number = 0;
   @Prop playerZ: number = 0;
   @Prop playerYaw: number = 0;
-  worldRadius: number = 5.5;
   onWaypointTap: (wp: Waypoint) => void = (wp: Waypoint) => {};
 
-  private worldToMap(coord: number): number {
-    return coord * (MAP_RADIUS / this.worldRadius);
+  private pxPerMeter(): number {
+    const m: number = Math.max(this.layout.worldWidth, this.layout.worldDepth);
+    return m > 0 ? MAP_MAX_PX / m : 1;
   }
 
-  private centerPx(): number {
-    return MAP_SIZE / 2;
+  private mapW(): number {
+    return this.layout.worldWidth * this.pxPerMeter();
+  }
+
+  private mapH(): number {
+    return this.layout.worldDepth * this.pxPerMeter();
+  }
+
+  private wx(x: number): number {
+    return this.mapW() / 2 + x * this.pxPerMeter();
+  }
+
+  private wy(z: number): number {
+    return this.mapH() / 2 + z * this.pxPerMeter();
+  }
+
+  /** 把一道内墙拆成若干"门洞间"墙段，便于绘制时跳过门洞。 */
+  private wallSegments(wall: InternalWall): WallSegment[] {
+    const segs: WallSegment[] = [];
+    const halfW: number = this.layout.worldWidth / 2;
+    const sorted: Doorway[] = wall.doorways.slice().sort(
+      (a: Doorway, b: Doorway): number => a.xStart - b.xStart
+    );
+    let cursor: number = -halfW;
+    for (const d of sorted) {
+      if (d.xStart > cursor) {
+        const seg: WallSegment = { x1: cursor, x2: d.xStart };
+        segs.push(seg);
+      }
+      cursor = d.xEnd;
+    }
+    if (cursor < halfW) {
+      const seg: WallSegment = { x1: cursor, x2: halfW };
+      segs.push(seg);
+    }
+    return segs;
   }
 
   build() {
     Stack() {
-      // 外圈：画廊轮廓
-      Circle()
-        .width(MAP_RADIUS * 2)
-        .height(MAP_RADIUS * 2)
-        .fill('#0a0a1aDD')
-        .stroke('#d4b678')
-        .strokeWidth(1.5)
+      // 底板
+      Column()
+        .width(this.mapW())
+        .height(this.mapH())
+        .backgroundColor('#0a0a1aDD')
+        .borderColor('#d4b678')
+        .borderWidth(1.5)
 
-      // 北向标记
+      // 北方向标记
       Text('N')
-        .fontSize(10)
+        .fontSize(11)
         .fontColor('#d4b678')
-        .position({ x: this.centerPx() - 4, y: this.centerPx() - MAP_RADIUS + 2 })
+        .position({ x: this.mapW() / 2 - 4, y: 4 })
 
-      // 中心十字
-      Text('+')
-        .fontSize(10)
-        .fontColor('#4a4a5a')
-        .position({ x: this.centerPx() - 3, y: this.centerPx() - 6 })
+      // 内墙（每道墙拆成多个段，跳过门洞）
+      ForEach(this.layout.internalWalls, (wall: InternalWall) => {
+        ForEach(this.wallSegments(wall), (seg: WallSegment) => {
+          Column()
+            .width((seg.x2 - seg.x1) * this.pxPerMeter())
+            .height(WALL_THICKNESS)
+            .backgroundColor('#d4b678BB')
+            .position({
+              x: this.wx(seg.x1),
+              y: this.wy(wall.z) - WALL_THICKNESS / 2
+            })
+        }, (seg: WallSegment) => `${wall.z}_${seg.x1}_${seg.x2}`)
+      }, (wall: InternalWall) => `wall_${wall.z}`)
 
       // 航点圆点
       ForEach(this.waypoints, (wp: Waypoint) => {
@@ -63,8 +106,8 @@ export struct Minimap {
           .stroke('#d4b678')
           .strokeWidth(1)
           .position({
-            x: this.centerPx() + this.worldToMap(wp.position.x) - DOT_SIZE / 2,
-            y: this.centerPx() + this.worldToMap(wp.position.z) - DOT_SIZE / 2
+            x: this.wx(wp.position.x) - DOT_SIZE / 2,
+            y: this.wy(wp.position.z) - DOT_SIZE / 2
           })
           .onClick(() => {
             this.onWaypointTap(wp);
@@ -89,11 +132,11 @@ export struct Minimap {
           centerY: '50%'
         })
         .position({
-          x: this.centerPx() + this.worldToMap(this.playerX) - PLAYER_SIZE / 2,
-          y: this.centerPx() + this.worldToMap(this.playerZ) - PLAYER_SIZE / 2
+          x: this.wx(this.playerX) - PLAYER_SIZE / 2,
+          y: this.wy(this.playerZ) - PLAYER_SIZE / 2
         })
     }
-    .width(MAP_SIZE)
-    .height(MAP_SIZE)
+    .width(this.mapW())
+    .height(this.mapH())
   }
 }

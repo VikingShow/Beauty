@@ -6,13 +6,13 @@
 
 ## 3D 模型
 
-### VR Round Art Gallery
-- **作者 / Author**: Maxim Mavrichev — https://sketchfab.com/mvrc.art
-- **来源 / Source**: https://sketchfab.com/3d-models/vr-round-art-gallery-3af1b679f52042fc9c40c901a6fed81b
-- **许可证 / License**: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/)
+### Gallery Room（自生成）
+- **作者**: 项目自有
+- **生成方式**: `scripts/generate_gallery.py`
+- **格式**: glTF 2.0 单文件，buffer 内嵌为 base64
+- **尺寸**: 40m × 8m × 25m 白色 PBR 盒子展厅
 - **使用位置**: `entry/src/main/resources/rawfile/gltf/gallery/`
-- **致谢声明（应用内必须显示）**:
-  > This work is based on "VR Round Art Gallery" (https://sketchfab.com/3d-models/vr-round-art-gallery-3af1b679f52042fc9c40c901a6fed81b) by Maxim Mavrichev (https://sketchfab.com/mvrc.art) licensed under CC-BY-4.0.
+- **许可证**: 项目自有，无第三方依赖
 
 ### Damaged Helmet
 - **作者 / Authors**: theblueturtle_ (original), Khronos Group (glTF sample)
@@ -26,4 +26,3 @@
 ## 引擎与框架
 
 - **HarmonyOS / ArkGraphics 3D / ArkUI**: Huawei Device Co., Ltd. — Apache 2.0 部分组件
-- **Cocos Creator**（如未来引入）: MIT
