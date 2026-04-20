@@ -16,7 +16,7 @@ struct Index {
           colors: [['#0a0a1a', 0], ['#1a1a2e', 0.5], ['#0f0f1f', 1]]
         })
 
-      Column({ space: 24 }) {
+      Column({ space: 20 }) {
         Text(this.title)
           .fontSize(72)
           .fontWeight(FontWeight.Bold)
@@ -27,33 +27,39 @@ struct Index {
           .fontSize(20)
           .fontColor('#8a8a9a')
           .letterSpacing(4)
-          .margin({ bottom: 40 })
+          .margin({ bottom: 36 })
 
-        Button('开始巡夜', { type: ButtonType.Capsule })
-          .width(240)
-          .height(56)
-          .fontSize(20)
+        // 主关卡入口
+        Button('第一关 · David', { type: ButtonType.Capsule })
+          .width(280)
+          .height(60)
+          .fontSize(22)
           .fontColor('#0a0a1a')
           .backgroundColor('#d4b678')
           .onClick(() => {
-            router.pushUrl({ url: 'pages/GalleryScene' });
+            router.pushUrl({ url: 'pages/DavidScene' });
           })
 
-        Button('展厅漫游（FP）', { type: ButtonType.Capsule })
-          .width(240)
-          .height(48)
-          .fontSize(16)
-          .fontColor('#d4b678')
+        Text('— 测试场景 —')
+          .fontSize(12)
+          .fontColor('#5a5a6a')
+          .margin({ top: 28, bottom: 4 })
+
+        Button('展厅漫游（白盒）', { type: ButtonType.Capsule })
+          .width(220)
+          .height(40)
+          .fontSize(14)
+          .fontColor('#8a8a9a')
           .backgroundColor('#1a1a2e')
-          .borderColor('#d4b678')
+          .borderColor('#4a4a5a')
           .borderWidth(1)
           .onClick(() => {
             router.pushUrl({ url: 'pages/GalleryScene' });
           })
 
-        Button('3D 轨道相机测试', { type: ButtonType.Capsule })
-          .width(240)
-          .height(44)
+        Button('3D 轨道相机', { type: ButtonType.Capsule })
+          .width(220)
+          .height(40)
           .fontSize(14)
           .fontColor('#8a8a9a')
           .backgroundColor('#1a1a2e')
@@ -63,10 +69,10 @@ struct Index {
             router.pushUrl({ url: 'pages/GameScene' });
           })
 
-        Text('v0.1 · Phase 0')
+        Text('v0.2 · Phase 1C')
           .fontSize(12)
           .fontColor('#4a4a5a')
-          .margin({ top: 60 })
+          .margin({ top: 40 })
       }
       .width('100%')
       .height('100%')

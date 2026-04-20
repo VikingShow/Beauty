@@ -1,0 +1,11 @@
+Model Information:
+* title:	Art Gallery
+* source:	https://sketchfab.com/3d-models/art-gallery-720b507d814740278c713d100def4c99
+* author:	Zeps3D (https://sketchfab.com/Zeps3D)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Art Gallery" (https://sketchfab.com/3d-models/art-gallery-720b507d814740278c713d100def4c99) by Zeps3D (https://sketchfab.com/Zeps3D) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -14,6 +14,14 @@
 - **使用位置**: `entry/src/main/resources/rawfile/gltf/gallery/`
 - **许可证**: 项目自有，无第三方依赖
 
+### Art Gallery (第一关 · David 场景)
+- **作者 / Author**: Zeps3D — https://sketchfab.com/Zeps3D
+- **来源 / Source**: https://sketchfab.com/3d-models/art-gallery-720b507d814740278c713d100def4c99
+- **许可证 / License**: [CC-BY 4.0](http://creativecommons.org/licenses/by/4.0/)
+- **使用位置**: `entry/src/main/resources/rawfile/gltf/David/`
+- **致谢声明（应用内必须显示）**:
+  > This work is based on "Art Gallery" (https://sketchfab.com/3d-models/art-gallery-720b507d814740278c713d100def4c99) by Zeps3D (https://sketchfab.com/Zeps3D) licensed under CC-BY-4.0.
+
 ### Damaged Helmet
 - **作者 / Authors**: theblueturtle_ (original), Khronos Group (glTF sample)
 - **来源 / Source**: https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0/DamagedHelmet

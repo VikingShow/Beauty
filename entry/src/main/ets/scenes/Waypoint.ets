@@ -26,6 +26,14 @@ export interface RoomLayout {
   worldWidth: number;
   worldDepth: number;
   internalWalls: InternalWall[];
+  /** 可选：俯视缩略图（Resource 指向 $rawfile 或 $r('app.media.xxx')）。 */
+  floorplanImage?: Resource;
+  /**
+   * 小地图"朝上"方向对应的世界 yaw 角（弧度）。
+   * 默认 0 表示 yaw=0（forward=-Z）对应小地图的上方；
+   * David 场景的图片 top 对应 yaw=-π/2（forward=+X），即 -Math.PI/2。
+   */
+  imageNorthYawOffset?: number;
 }
 
 /**
@@ -67,4 +75,37 @@ export const GALLERY_WAYPOINTS: Waypoint[] = [
   { id: 'south_hall', name: '南厅', position: { x: 0, y: 2.0, z: 12 }, yaw: Math.PI, pitch: 0 },
   { id: 'center_east', name: '中厅东侧', position: { x: 9, y: 2.0, z: 0 }, yaw: -Math.PI / 2, pitch: 0 },
   { id: 'center_west', name: '中厅西侧', position: { x: -9, y: 2.0, z: 0 }, yaw: Math.PI / 2, pitch: 0 }
+];
+
+/**
+ * 第一关 "David" —— Art Gallery by Zeps3D (CC-BY 4.0)。
+ *
+ * 经 glTF 节点矩阵分析，模型在世界空间约 6m × 6m × 7m（米单位）。
+ * 根节点做了 Z-up → Y-up + 缩放 0.01（cm→m）变换。
+ * 航点坐标都用米。人眼视高 1.7m。
+ */
+export const DAVID_LAYOUT: RoomLayout = {
+  // 匹配俯视图纵横比 0.613。图片 top 对应世界 -X 方向（朝向 David 深处）。
+  worldWidth: 5,
+  worldDepth: 8.2,
+  internalWalls: [],
+  floorplanImage: $rawfile('gltf/David/floorplan.png'),
+  imageNorthYawOffset: Math.PI / 2
+};
+
+/**
+ * 航点约定（与图对齐）：
+ *  - 入口 = 图片下方 = 世界 +X（从 +X 侧进门）
+ *  - 雕像/深处 = 图片上方 = 世界 -X
+ *  - 东侧 = 图片右侧 = 世界 -Z
+ *  - 西侧 = 图片左侧 = 世界 +Z
+ *
+ * 默认 yaw 都是 +π/2（面向 -X，向图片上方看/朝 David 走）。
+ */
+export const DAVID_WAYPOINTS: Waypoint[] = [
+  { id: 'entrance', name: '入口', position: { x: 2.5, y: 1.7, z: 0 }, yaw: Math.PI / 2, pitch: 0 },
+  { id: 'center', name: '中央', position: { x: 0, y: 1.7, z: 0 }, yaw: Math.PI / 2, pitch: 0 },
+  { id: 'statue', name: '雕像', position: { x: -1.5, y: 1.7, z: 0 }, yaw: Math.PI / 2, pitch: 0 },
+  { id: 'east', name: '东侧', position: { x: 0, y: 1.7, z: -1.5 }, yaw: Math.PI / 2, pitch: 0 },
+  { id: 'west', name: '西侧', position: { x: 0, y: 1.7, z: 1.5 }, yaw: Math.PI / 2, pitch: 0 }
 ];
