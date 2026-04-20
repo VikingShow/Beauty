@@ -40,6 +40,11 @@ INTERNAL_WALL_ZS = [-7.5, 7.5]
 DOORWAY_X_CENTERS = [-5.0, 5.0]   # 每道内墙 2 个门洞
 DOORWAY_WIDTH = 4.0
 DOORWAY_HEIGHT = 5.0
+WALL_T = 0.3                       # 内墙厚度（米）—— 消除"纸片墙"观感
+
+# 中央大厅立柱位置（XZ 中心），每根 0.6m × 0.6m × 层高
+COLUMN_POSITIONS = [(-6.0, 0.0), (6.0, 0.0)]
+COLUMN_SIZE = 0.6
 
 OUT_DIR = os.path.join("entry", "src", "main", "resources", "rawfile", "gltf", "gallery")
 TEX_DIR = os.path.join(OUT_DIR, "textures")
@@ -216,58 +221,109 @@ add_face(
     MAT_WALL, D, H
 )
 
-# === 内墙：每道墙包含 5 段（左 / 门洞1上方过梁 / 中 / 门洞2上方过梁 / 右）===
-def add_internal_wall(z_pos: float):
-    # 计算门洞水平区间
-    door1_x_left = DOORWAY_X_CENTERS[0] - DOORWAY_WIDTH / 2
-    door1_x_right = DOORWAY_X_CENTERS[0] + DOORWAY_WIDTH / 2
-    door2_x_left = DOORWAY_X_CENTERS[1] - DOORWAY_WIDTH / 2
-    door2_x_right = DOORWAY_X_CENTERS[1] + DOORWAY_WIDTH / 2
+# === 内墙：厚度 WALL_T，两侧都有墙面，门洞有左右门柱 + 门楣形成立体开口 ===
+def add_wall_segments_on_plane(z_pos: float, normal_z: float, doorways: list):
+    """沿 z_pos 平面上铺 5 段墙（左/过梁1/中/过梁2/右），法线由 normal_z 决定。"""
+    normal = (0.0, 0.0, normal_z)
+    d1_l, d1_r = doorways[0]
+    d2_l, d2_r = doorways[1]
 
-    # 法线统一指向 +Z（doubleSided 材质两面都渲染）
-    n = (0.0, 0.0, 1.0)
-
-    # 左段（从西外墙到 door1_x_left，全高）
-    if door1_x_left > -HW:
-        seg_w = door1_x_left - (-HW)
+    # 左段
+    if d1_l > -HW:
+        seg_w = d1_l - (-HW)
         add_face(
-            [(-HW, 0, z_pos), (door1_x_left, 0, z_pos), (door1_x_left, H, z_pos), (-HW, H, z_pos)],
-            n, MAT_WALL, seg_w, H
+            [(-HW, 0, z_pos), (d1_l, 0, z_pos), (d1_l, H, z_pos), (-HW, H, z_pos)],
+            normal, MAT_WALL, seg_w, H
         )
-
     # 门洞 1 上方过梁
     add_face(
-        [(door1_x_left, DOORWAY_HEIGHT, z_pos), (door1_x_right, DOORWAY_HEIGHT, z_pos),
-         (door1_x_right, H, z_pos), (door1_x_left, H, z_pos)],
-        n, MAT_WALL, DOORWAY_WIDTH, H - DOORWAY_HEIGHT
+        [(d1_l, DOORWAY_HEIGHT, z_pos), (d1_r, DOORWAY_HEIGHT, z_pos),
+         (d1_r, H, z_pos), (d1_l, H, z_pos)],
+        normal, MAT_WALL, DOORWAY_WIDTH, H - DOORWAY_HEIGHT
     )
-
     # 中段
-    if door2_x_left > door1_x_right:
-        seg_w = door2_x_left - door1_x_right
+    if d2_l > d1_r:
+        seg_w = d2_l - d1_r
         add_face(
-            [(door1_x_right, 0, z_pos), (door2_x_left, 0, z_pos),
-             (door2_x_left, H, z_pos), (door1_x_right, H, z_pos)],
-            n, MAT_WALL, seg_w, H
+            [(d1_r, 0, z_pos), (d2_l, 0, z_pos), (d2_l, H, z_pos), (d1_r, H, z_pos)],
+            normal, MAT_WALL, seg_w, H
         )
-
     # 门洞 2 上方过梁
     add_face(
-        [(door2_x_left, DOORWAY_HEIGHT, z_pos), (door2_x_right, DOORWAY_HEIGHT, z_pos),
-         (door2_x_right, H, z_pos), (door2_x_left, H, z_pos)],
-        n, MAT_WALL, DOORWAY_WIDTH, H - DOORWAY_HEIGHT
+        [(d2_l, DOORWAY_HEIGHT, z_pos), (d2_r, DOORWAY_HEIGHT, z_pos),
+         (d2_r, H, z_pos), (d2_l, H, z_pos)],
+        normal, MAT_WALL, DOORWAY_WIDTH, H - DOORWAY_HEIGHT
     )
-
-    # 右段（从 door2_x_right 到东外墙）
-    if door2_x_right < HW:
-        seg_w = HW - door2_x_right
+    # 右段
+    if d2_r < HW:
+        seg_w = HW - d2_r
         add_face(
-            [(door2_x_right, 0, z_pos), (HW, 0, z_pos), (HW, H, z_pos), (door2_x_right, H, z_pos)],
-            n, MAT_WALL, seg_w, H
+            [(d2_r, 0, z_pos), (HW, 0, z_pos), (HW, H, z_pos), (d2_r, H, z_pos)],
+            normal, MAT_WALL, seg_w, H
+        )
+
+def add_internal_wall(z_center: float):
+    z_front = z_center - WALL_T / 2   # 朝 -Z 的一侧
+    z_back = z_center + WALL_T / 2    # 朝 +Z 的一侧
+
+    doorways = [
+        (c - DOORWAY_WIDTH / 2, c + DOORWAY_WIDTH / 2)
+        for c in sorted(DOORWAY_X_CENTERS)
+    ]
+
+    # 两面墙
+    add_wall_segments_on_plane(z_front, -1.0, doorways)
+    add_wall_segments_on_plane(z_back, +1.0, doorways)
+
+    # 每个门洞添加门楣（顶面向下）+ 左右门柱（面向门洞内侧）
+    for d_l, d_r in doorways:
+        # 门楣下表面：y = DOORWAY_HEIGHT，覆盖 (d_l~d_r) x (z_front~z_back)，法线 -Y
+        add_face(
+            [(d_l, DOORWAY_HEIGHT, z_front), (d_r, DOORWAY_HEIGHT, z_front),
+             (d_r, DOORWAY_HEIGHT, z_back), (d_l, DOORWAY_HEIGHT, z_back)],
+            (0.0, -1.0, 0.0), MAT_WALL, DOORWAY_WIDTH, WALL_T
+        )
+        # 左门柱：x = d_l 的垂直面，法线 +X
+        add_face(
+            [(d_l, 0, z_back), (d_l, 0, z_front),
+             (d_l, DOORWAY_HEIGHT, z_front), (d_l, DOORWAY_HEIGHT, z_back)],
+            (1.0, 0.0, 0.0), MAT_WALL, WALL_T, DOORWAY_HEIGHT
+        )
+        # 右门柱：x = d_r 的垂直面，法线 -X
+        add_face(
+            [(d_r, 0, z_front), (d_r, 0, z_back),
+             (d_r, DOORWAY_HEIGHT, z_back), (d_r, DOORWAY_HEIGHT, z_front)],
+            (-1.0, 0.0, 0.0), MAT_WALL, WALL_T, DOORWAY_HEIGHT
         )
 
 for z in INTERNAL_WALL_ZS:
     add_internal_wall(z)
+
+# === 中央大厅立柱（marble 风，用地板材质）===
+def add_column(cx: float, cz: float):
+    half = COLUMN_SIZE / 2
+    x1, x2 = cx - half, cx + half
+    z1, z2 = cz - half, cz + half
+    # 4 个侧面（顶底隐藏于地板/天花）
+    add_face(
+        [(x2, 0, z1), (x2, 0, z2), (x2, H, z2), (x2, H, z1)],
+        (1.0, 0.0, 0.0), MAT_FLOOR, COLUMN_SIZE, H
+    )
+    add_face(
+        [(x1, 0, z2), (x1, 0, z1), (x1, H, z1), (x1, H, z2)],
+        (-1.0, 0.0, 0.0), MAT_FLOOR, COLUMN_SIZE, H
+    )
+    add_face(
+        [(x2, 0, z2), (x1, 0, z2), (x1, H, z2), (x2, H, z2)],
+        (0.0, 0.0, 1.0), MAT_FLOOR, COLUMN_SIZE, H
+    )
+    add_face(
+        [(x1, 0, z1), (x2, 0, z1), (x2, H, z1), (x1, H, z1)],
+        (0.0, 0.0, -1.0), MAT_FLOOR, COLUMN_SIZE, H
+    )
+
+for cx, cz in COLUMN_POSITIONS:
+    add_column(cx, cz)
 
 # ==================== 转换为 buffer ====================
 

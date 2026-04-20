@@ -62,9 +62,9 @@ export const GALLERY_LAYOUT: RoomLayout = {
 };
 
 export const GALLERY_WAYPOINTS: Waypoint[] = [
-  { id: 'north_hall', name: '北厅', position: { x: 0, y: 1.6, z: -12 }, yaw: 0, pitch: 0 },
-  { id: 'center', name: '中央大厅', position: { x: 0, y: 1.6, z: 0 }, yaw: 0, pitch: 0 },
-  { id: 'south_hall', name: '南厅', position: { x: 0, y: 1.6, z: 12 }, yaw: Math.PI, pitch: 0 },
-  { id: 'center_east', name: '中厅东侧', position: { x: 9, y: 1.6, z: 0 }, yaw: -Math.PI / 2, pitch: 0 },
-  { id: 'center_west', name: '中厅西侧', position: { x: -9, y: 1.6, z: 0 }, yaw: Math.PI / 2, pitch: 0 }
+  { id: 'north_hall', name: '北厅', position: { x: 0, y: 2.0, z: -12 }, yaw: 0, pitch: 0 },
+  { id: 'center', name: '中央大厅', position: { x: 0, y: 2.0, z: 0 }, yaw: 0, pitch: 0 },
+  { id: 'south_hall', name: '南厅', position: { x: 0, y: 2.0, z: 12 }, yaw: Math.PI, pitch: 0 },
+  { id: 'center_east', name: '中厅东侧', position: { x: 9, y: 2.0, z: 0 }, yaw: -Math.PI / 2, pitch: 0 },
+  { id: 'center_west', name: '中厅西侧', position: { x: -9, y: 2.0, z: 0 }, yaw: Math.PI / 2, pitch: 0 }
 ];
