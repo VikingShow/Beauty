@@ -1,4 +1,4 @@
-import { Doorway, InternalWall, RoomLayout, Waypoint } from '../scenes/Waypoint';
+import { Doorway, InternalWall, RoomLayout, SceneFeature, Waypoint } from '../scenes/Waypoint';
 
 const MAP_MAX_PX: number = 220;
 const DOT_SIZE: number = 14;
@@ -10,9 +10,22 @@ interface WallSegment {
   x2: number;
 }
 
+interface MapBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 /**
- * 矩形俯视小地图，按真实房间比例绘制，
- * 显示外墙轮廓 + 内墙（带门洞间隙）+ 航点 + 玩家朝向。
+ * 俯视小地图。按真实世界坐标矢量绘制：
+ *   外墙 → 底板边框 + 地板色
+ *   features → 展品/障碍物矩形
+ *   waypoints → 金色圆点
+ *   玩家 → 红色三角（带朝向旋转）
+ *
+ * 支持 worldCenterX/Z 偏移（当模型原点不在几何中心时），
+ * 以及 imageNorthYawOffset（让小地图"上方"对齐世界中任意方向）。
  */
 @Component
 export struct Minimap {
@@ -37,25 +50,43 @@ export struct Minimap {
     return this.layout.worldDepth * this.pxPerMeter();
   }
 
-  /**
-   * 世界 (x, z) 映射到小地图像素坐标，按 imageNorthYawOffset 旋转坐标系。
-   * 默认 θ=0 等价于 x→mapX, z→mapY。
-   */
+  /** 世界 (x, z) → 小地图像素。按 imageNorthYawOffset 旋转 + worldCenter 偏移。 */
   private wx(x: number, z: number): number {
     const theta: number = this.layout.imageNorthYawOffset ?? 0;
-    const cos: number = Math.cos(theta);
-    const sin: number = Math.sin(theta);
-    return this.mapW() / 2 + (x * cos - z * sin) * this.pxPerMeter();
+    const cx: number = this.layout.worldCenterX ?? 0;
+    const cz: number = this.layout.worldCenterZ ?? 0;
+    const dx: number = x - cx;
+    const dz: number = z - cz;
+    return this.mapW() / 2 + (dx * Math.cos(theta) - dz * Math.sin(theta)) * this.pxPerMeter();
   }
 
   private wy(x: number, z: number): number {
     const theta: number = this.layout.imageNorthYawOffset ?? 0;
-    const cos: number = Math.cos(theta);
-    const sin: number = Math.sin(theta);
-    return this.mapH() / 2 + (x * sin + z * cos) * this.pxPerMeter();
+    const cx: number = this.layout.worldCenterX ?? 0;
+    const cz: number = this.layout.worldCenterZ ?? 0;
+    const dx: number = x - cx;
+    const dz: number = z - cz;
+    return this.mapH() / 2 + (dx * Math.sin(theta) + dz * Math.cos(theta)) * this.pxPerMeter();
   }
 
-  /** 把一道内墙拆成若干"门洞间"墙段，便于绘制时跳过门洞。 */
+  /** 把一个世界 AABB 转为小地图像素矩形（4 个角取包络，支持 90° 倍数旋转）。 */
+  private featureBox(f: SceneFeature): MapBox {
+    const xs: number[] = [
+      this.wx(f.minX, f.minZ), this.wx(f.maxX, f.minZ),
+      this.wx(f.maxX, f.maxZ), this.wx(f.minX, f.maxZ)
+    ];
+    const ys: number[] = [
+      this.wy(f.minX, f.minZ), this.wy(f.maxX, f.minZ),
+      this.wy(f.maxX, f.maxZ), this.wy(f.minX, f.maxZ)
+    ];
+    const xMin: number = Math.min(xs[0], xs[1], xs[2], xs[3]);
+    const xMax: number = Math.max(xs[0], xs[1], xs[2], xs[3]);
+    const yMin: number = Math.min(ys[0], ys[1], ys[2], ys[3]);
+    const yMax: number = Math.max(ys[0], ys[1], ys[2], ys[3]);
+    return { x: xMin, y: yMin, w: xMax - xMin, h: yMax - yMin };
+  }
+
+  /** 把一道内墙拆成若干"门洞间"墙段（仅 θ=0 场景，不参与坐标旋转）。 */
   private wallSegments(wall: InternalWall): WallSegment[] {
     const segs: WallSegment[] = [];
     const halfW: number = this.layout.worldWidth / 2;
@@ -77,7 +108,7 @@ export struct Minimap {
     return segs;
   }
 
-  /** 玩家三角形的旋转角（度），基于 yaw 与图片朝向偏移。 */
+  /** 玩家三角形的旋转角（度）。 */
   private triangleAngleDeg(): number {
     const theta: number = this.layout.imageNorthYawOffset ?? 0;
     return -(this.playerYaw - theta) * 180 / Math.PI;
@@ -85,22 +116,31 @@ export struct Minimap {
 
   build() {
     Stack() {
-      // 底板
+      // 底板（深底 + 金色描边当外墙）
       Column()
         .width(this.mapW())
         .height(this.mapH())
-        .backgroundColor('#0a0a1aDD')
+        .backgroundColor('#1a1a24EE')
         .borderColor('#d4b678')
         .borderWidth(1.5)
 
-      // 可选：俯视缩略图背景
+      // 可选：用户提供的俯视缩略图（David 场景已改矢量，不需要）
       if (this.layout.floorplanImage !== undefined) {
         Image(this.layout.floorplanImage)
           .width(this.mapW())
           .height(this.mapH())
           .objectFit(ImageFit.Fill)
-          .opacity(0.85)
+          .opacity(0.75)
       }
+
+      // features：展品 / 障碍物矩形
+      ForEach(this.layout.features ?? [], (f: SceneFeature) => {
+        Column()
+          .width(this.featureBox(f).w)
+          .height(this.featureBox(f).h)
+          .backgroundColor(f.color)
+          .position({ x: this.featureBox(f).x, y: this.featureBox(f).y })
+      }, (f: SceneFeature) => f.id)
 
       // 北方向标记
       Text('N')
@@ -108,7 +148,7 @@ export struct Minimap {
         .fontColor('#d4b678')
         .position({ x: this.mapW() / 2 - 4, y: 4 })
 
-      // 内墙（每道墙拆成多个段，跳过门洞；仅用于 θ=0 场景）
+      // 内墙（Gallery 场景使用）
       ForEach(this.layout.internalWalls, (wall: InternalWall) => {
         ForEach(this.wallSegments(wall), (seg: WallSegment) => {
           Column()

@@ -9,9 +9,10 @@ import {
 } from '@kit.ArkGraphics3D';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
-import { DAVID_LAYOUT, DAVID_WAYPOINTS, Waypoint } from '../scenes/Waypoint';
+import { AABB2, FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
+import { DAVID_LAYOUT, DAVID_WAYPOINTS, SceneFeature, Waypoint } from '../scenes/Waypoint';
 import { Minimap } from '../components/Minimap';
+import { Joystick } from '../components/Joystick';
 
 const DOMAIN = 0x0102;
 
@@ -47,6 +48,16 @@ struct DavidScene {
       this.playerZ = this.controller.getPositionZ();
       this.playerYaw = this.controller.getYaw();
     });
+
+    // 设置可行区 + 碰撞障碍
+    this.controller.setBounds(DAVID_LAYOUT.boundsMin, DAVID_LAYOUT.boundsMax);
+    const solidColliders: AABB2[] = [];
+    for (const f of DAVID_LAYOUT.features ?? []) {
+      if (f.solid === true) {
+        solidColliders.push({ minX: f.minX, maxX: f.maxX, minZ: f.minZ, maxZ: f.maxZ });
+      }
+    }
+    this.controller.setColliders(solidColliders);
 
     try {
       hilog.info(DOMAIN, 'DavidScene', 'start loading David scene');
@@ -187,6 +198,15 @@ struct DavidScene {
       })
         .position({ x: '100%', y: 20 })
         .markAnchor({ x: 240, y: 0 })
+
+      // 左下角虚拟摇杆
+      Joystick({
+        onInput: (x: number, y: number) => {
+          this.controller.setMoveInput(x, y);
+        }
+      })
+        .position({ x: 32, y: '100%' })
+        .markAnchor({ x: 0, y: 192 })
 
       // 底部航点切换条
       Row({ space: 12 }) {
