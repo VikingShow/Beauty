@@ -16,6 +16,13 @@ import { Minimap } from '../components/Minimap';
 const DOMAIN = 0x0101;
 const GALLERY_WORLD_RADIUS: number = 5.5;
 
+interface RGBA {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+}
+
 @Entry
 @Component
 struct GalleryScene {
@@ -51,29 +58,42 @@ struct GalleryScene {
       cam.clearColor = { r: 0.55, g: 0.58, b: 0.65, a: 1.0 };
       this.controller.attach(cam);
 
-      // 多盏方向光从不同角度照射，避免单光源造成大片阴暗
+      // 多盏高强度方向光从不同角度照射
+      const brightWhite: RGBA = { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
+
       const lightTopParams: SceneNodeParameters = { name: 'lightTop' };
       const lightTop: Light = await factory.createLight(lightTopParams, LightType.DIRECTIONAL);
       lightTop.enabled = true;
-      // 旋转使光线从顶部往下照（quat 为绕 X 轴 -90°）
+      lightTop.color = brightWhite;
+      lightTop.intensity = 8.0;
       lightTop.rotation = { x: -0.7071, y: 0, z: 0, w: 0.7071 };
 
       const lightFrontParams: SceneNodeParameters = { name: 'lightFront' };
       const lightFront: Light = await factory.createLight(lightFrontParams, LightType.DIRECTIONAL);
       lightFront.enabled = true;
-      // 默认朝 -Z（前方），保留默认旋转
+      lightFront.color = brightWhite;
+      lightFront.intensity = 5.0;
 
       const lightBackParams: SceneNodeParameters = { name: 'lightBack' };
       const lightBack: Light = await factory.createLight(lightBackParams, LightType.DIRECTIONAL);
       lightBack.enabled = true;
-      // 旋转 180° 绕 Y 轴：朝向 +Z（后方）
+      lightBack.color = brightWhite;
+      lightBack.intensity = 5.0;
       lightBack.rotation = { x: 0, y: 1, z: 0, w: 0 };
 
       const lightSideParams: SceneNodeParameters = { name: 'lightSide' };
       const lightSide: Light = await factory.createLight(lightSideParams, LightType.DIRECTIONAL);
       lightSide.enabled = true;
-      // 旋转 90° 绕 Y 轴：朝向 -X（左侧）
+      lightSide.color = brightWhite;
+      lightSide.intensity = 5.0;
       lightSide.rotation = { x: 0, y: 0.7071, z: 0, w: 0.7071 };
+
+      const lightSide2Params: SceneNodeParameters = { name: 'lightSide2' };
+      const lightSide2: Light = await factory.createLight(lightSide2Params, LightType.DIRECTIONAL);
+      lightSide2.enabled = true;
+      lightSide2.color = brightWhite;
+      lightSide2.intensity = 5.0;
+      lightSide2.rotation = { x: 0, y: -0.7071, z: 0, w: 0.7071 };
 
       this.sceneInstance = scene;
       this.sceneReady = true;
