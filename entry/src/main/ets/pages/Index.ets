@@ -36,10 +36,10 @@ struct Index {
           .fontColor('#0a0a1a')
           .backgroundColor('#d4b678')
           .onClick(() => {
-            router.pushUrl({ url: 'pages/GameScene' });
+            router.pushUrl({ url: 'pages/GalleryScene' });
           })
 
-        Button('3D 环境测试', { type: ButtonType.Capsule })
+        Button('展厅漫游（FP）', { type: ButtonType.Capsule })
           .width(240)
           .height(48)
           .fontSize(16)
@@ -48,7 +48,19 @@ struct Index {
           .borderColor('#d4b678')
           .borderWidth(1)
           .onClick(() => {
-            router.pushUrl({ url: 'pages/GameScene', params: { mode: 'test' } });
+            router.pushUrl({ url: 'pages/GalleryScene' });
+          })
+
+        Button('3D 轨道相机测试', { type: ButtonType.Capsule })
+          .width(240)
+          .height(44)
+          .fontSize(14)
+          .fontColor('#8a8a9a')
+          .backgroundColor('#1a1a2e')
+          .borderColor('#4a4a5a')
+          .borderWidth(1)
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/GameScene' });
           })
 
         Text('v0.1 · Phase 0')
