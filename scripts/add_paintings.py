@@ -237,23 +237,7 @@ PAINTINGS = [
         "pos": (-0.69, 1.6, 2.0),
         "facing": "-X",
     },
-    # Zone "David 展台四围" - 盛期三杰环绕 David 雕像（Michelangelo 本人之作、Leonardo、Raphael）
-    # 展台：X=[7.02, 10.20] × Z=[-3.44, +3.44]，四面都是实墙，高 4.87m
-    # W 面（X=7.02, facing -X）: Doni Tondo + Virgin of the Rocks
-    # E 面（X=10.20, facing +X）: Transfiguration
-    {
-        "id": "doni_tondo",
-        "title_zh": "多尼圆形画（圣家族）",
-        "title_en": "Doni Tondo",
-        "artist": "Michelangelo",
-        "year": "c.1506",
-        "filename": "Tondo Doni by Michelangelo Buonarroti-Uffizi.jpg",
-        "orient": "landscape",
-        "aspect": 1.0,
-        "size": 1.2,
-        "pos": (7.02, 1.9, -1.5),
-        "facing": "-X",
-    },
+    # 西墙添补：Leonardo 岩间圣母（Primavera 与 Arnolfini 之间）
     {
         "id": "virgin_of_the_rocks",
         "title_zh": "岩间圣母",
@@ -264,8 +248,22 @@ PAINTINGS = [
         "orient": "portrait",
         "aspect": 122 / 199,
         "size": 1.6,
-        "pos": (7.02, 1.7, 1.5),
-        "facing": "-X",
+        "pos": (-10.0, 1.7, 2.5),
+        "facing": "+X",
+    },
+    # 南墙西段（入口门洞 X=3.6 以西）：Michelangelo + Raphael
+    {
+        "id": "doni_tondo",
+        "title_zh": "多尼圆形画（圣家族）",
+        "title_en": "Doni Tondo",
+        "artist": "Michelangelo",
+        "year": "c.1506",
+        "filename": "Tondo Doni by Michelangelo Buonarroti-Uffizi.jpg",
+        "orient": "landscape",
+        "aspect": 1.0,
+        "size": 1.2,
+        "pos": (-2.0, 1.9, 7.50),
+        "facing": "-Z",
     },
     {
         "id": "raphael_transfiguration",
@@ -277,8 +275,8 @@ PAINTINGS = [
         "orient": "portrait",
         "aspect": 278 / 410,
         "size": 2.0,
-        "pos": (10.20, 1.9, 0.0),
-        "facing": "+X",
+        "pos": (1.0, 1.9, 7.50),
+        "facing": "-Z",
     },
 ]
 
