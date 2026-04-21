@@ -112,17 +112,17 @@ export const DAVID_LAYOUT: RoomLayout = {
     // —— 西北通顶隔断 + 立柱（通顶 4.87m）：从西墙 X=-10 横插到 X=-6.20 的中央立柱 ——
     // 对应 walls mesh Y=±0.2 那两平面 + X=-6.25 的立柱
     { id: 'nw_partition', minX: -10.0, maxX: -6.20, minZ: -0.19, maxZ: 0.16, color: '#8a8577DD', solid: true, zIndex: 3 },
-    // —— 18 幅画：北墙 8 + 西墙 4 + 南墙 2 + 中央隔断 4（展台外不挂画，避开雕像视野）——
-    // 北墙西段：三杰 + 盛期序曲
-    { id: 'p_leonardo_last_supper', minX: -8.2, maxX: -5.8, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // —— 23 幅画：北墙 8 + 西墙 4 + 南墙 4 + 中央隔断 4 + 展台 W/E 3 ——
+    // 北墙西段：三杰 + 盛期序曲（高度统一：风景 H=1.3，肖像 H=1.4，Y 中心 1.7）
+    { id: 'p_leonardo_last_supper', minX: -8.25, maxX: -5.75, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_raphael_sistine_madonna', minX: -4.52, maxX: -3.48, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_school_of_athens', minX: -2.0, maxX: 0.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_creation_of_adam', minX: 1.0, maxX: 3.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_mona_lisa', minX: 4.585, maxX: 5.415, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    // 北墙东段：威尼斯画派（避开 David 展台 X=10.20 东侧 0.3m）
-    { id: 'p_venus_of_urbino', minX: 10.6, maxX: 12.4, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_wedding_at_cana', minX: 12.7, maxX: 14.7, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_tintoretto_last_supper', minX: 14.9, maxX: 16.7, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_creation_of_adam', minX: 1.25, maxX: 3.35, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_mona_lisa', minX: 4.52, maxX: 5.48, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // 北墙东段：威尼斯画派，3 幅等间距（每间隔 ≈ 0.4 m）
+    { id: 'p_venus_of_urbino', minX: 11.0, maxX: 12.6, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_wedding_at_cana', minX: 13.0, maxX: 14.6, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_tintoretto_last_supper', minX: 15.0, maxX: 16.6, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     // 西墙：早期佛罗伦萨 + 尼德兰 + Leonardo 添补
     { id: 'p_birth_of_venus', minX: -10, maxX: -9.88, minZ: -5.5, maxZ: -3.5, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_botticelli_primavera', minX: -10, maxX: -9.88, minZ: -2.5, maxZ: -0.5, color: '#d4b678DD', zIndex: 5 },
@@ -134,9 +134,15 @@ export const DAVID_LAYOUT: RoomLayout = {
     // 中央隔断西面：尼德兰风景叙事
     { id: 'p_bruegel_hunters', minX: -0.81, maxX: -0.69, minZ: -2.9, maxZ: -1.1, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_bruegel_tower', minX: -0.81, maxX: -0.69, minZ: 1.1, maxZ: 2.9, color: '#d4b678DD', zIndex: 5 },
-    // 南墙西段（入口左侧、门洞 X=3.6 之前）：Michelangelo + Raphael 遗作
-    { id: 'p_doni_tondo', minX: -2.6, maxX: -1.4, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_raphael_transfiguration', minX: 0.32, maxX: 1.68, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 }
+    // 南墙西段：4 幅依次排开，从 Titian 升天到 Raphael 遗作
+    { id: 'p_titian_assumption', minX: -5.52, maxX: -4.48, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_mantegna_lamentation', minX: -3.60, maxX: -2.40, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_doni_tondo', minX: -1.40, maxX: -0.20, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_raphael_transfiguration', minX: 0.72, maxX: 2.08, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
+    // David 展台四围：盛期三杰 + Caravaggio 巴洛克David
+    { id: 'p_caravaggio_david', minX: 6.90, maxX: 7.02, minZ: -2.065, maxZ: -0.935, color: '#d4b678DD', zIndex: 6 },
+    { id: 'p_lady_with_ermine', minX: 6.90, maxX: 7.02, minZ: 1.06, maxZ: 1.94, color: '#d4b678DD', zIndex: 6 },
+    { id: 'p_raphael_madonna_meadow', minX: 10.20, maxX: 10.32, minZ: -0.545, maxZ: 0.545, color: '#d4b678DD', zIndex: 6 }
   ]
 };
 
