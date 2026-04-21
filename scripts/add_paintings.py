@@ -208,7 +208,7 @@ PAINTINGS = [
         "pos": (16.0, 1.7, -7.5),
         "facing": "+Z",
     },
-    # 展台西面 X=7.02 facing -X：米开朗琪罗《最后的审判》垂直构图贴通顶墙
+    # 展台东面 X=10.20 facing +X：米开朗琪罗《最后的审判》垂直大画，正对入口走廊
     {
         "id": "michelangelo_last_judgment",
         "title_zh": "最后的审判",
@@ -219,21 +219,7 @@ PAINTINGS = [
         "orient": "portrait",
         "aspect": 1200 / 1370,
         "size": 2.6,
-        "pos": (7.02, 1.85, 0.0),
-        "facing": "-X",
-    },
-    # 展台东面 X=10.20 facing +X：拉斐尔《草地圣母》
-    {
-        "id": "raphael_madonna_meadow",
-        "title_zh": "草地圣母",
-        "title_en": "Madonna of the Meadow",
-        "artist": "Raphael",
-        "year": "1506",
-        "filename": "Raphael - Madonna in the Meadow - Google Art Project.jpg",
-        "orient": "portrait",
-        "aspect": 88 / 113,
-        "size": 1.4,
-        "pos": (10.20, 1.7, 0.0),
+        "pos": (10.20, 1.85, 0.0),
         "facing": "+X",
     },
     # 中央隔断东面 facing +X：威尼斯宗教 + 早期透视

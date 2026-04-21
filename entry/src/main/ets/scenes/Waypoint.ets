@@ -130,9 +130,8 @@ export const DAVID_LAYOUT: RoomLayout = {
     // 南墙西段：Space B 历史题材（Mantegna / Uccello）
     { id: 'p_mantegna_triumphs', minX: -6.2, maxX: -4.8, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_uccello_san_romano', minX: -3.4, maxX: -1.6, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
-    // David 展台：西面挂 Michelangelo《最后的审判》（通顶垂直），东面挂 Raphael 草地圣母
-    { id: 'p_michelangelo_last_judgment', minX: 6.90, maxX: 7.02, minZ: -1.14, maxZ: 1.14, color: '#d4b678DD', zIndex: 6 },
-    { id: 'p_raphael_madonna_meadow', minX: 10.20, maxX: 10.32, minZ: -0.545, maxZ: 0.545, color: '#d4b678DD', zIndex: 6 },
+    // David 展台东面：Michelangelo《最后的审判》正对入口（2.6m 通顶垂直大画）
+    { id: 'p_michelangelo_last_judgment', minX: 10.20, maxX: 10.32, minZ: -1.14, maxZ: 1.14, color: '#d4b678DD', zIndex: 6 },
     // 中央隔断东面（Space C 宗教）：Bellini + Piero
     { id: 'p_bellini_resurrection', minX: -0.32, maxX: -0.20, minZ: -2.56, maxZ: -1.44, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_piero_baptism', minX: -0.32, maxX: -0.20, minZ: 1.515, maxZ: 2.485, color: '#d4b678DD', zIndex: 5 },
