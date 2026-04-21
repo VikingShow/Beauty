@@ -154,7 +154,7 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 278.9 / 172.5,
         "size": 2.0,
-        "pos": (-10.0, 1.7, -4.0),
+        "pos": (-10.0, 1.7, -4.5),
         "facing": "+X",
     },
     {
@@ -167,7 +167,7 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 314 / 203,
         "size": 2.0,
-        "pos": (-10.0, 1.7, 0.0),
+        "pos": (-10.0, 1.7, -1.5),
         "facing": "+X",
     },
     {

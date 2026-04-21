@@ -109,6 +109,9 @@ export const DAVID_LAYOUT: RoomLayout = {
     { id: 'david_enclosure', minX: 7.02, maxX: 10.20, minZ: -3.44, maxZ: 3.44, color: '#6f6a5aCC', solid: true, zIndex: 3 },
     // —— 中央隔断墙：X=[-0.69, -0.32] × Z=[-3.13, 3.16]，独立纵向墙 ——
     { id: 'center_divider', minX: -0.69, maxX: -0.32, minZ: -3.13, maxZ: 3.16, color: '#8a8577DD', solid: true, zIndex: 3 },
+    // —— 西北通顶隔断 + 立柱（通顶 4.87m）：从西墙 X=-10 横插到 X=-6.20 的中央立柱 ——
+    // 对应 walls mesh Y=±0.2 那两平面 + X=-6.25 的立柱
+    { id: 'nw_partition', minX: -10.0, maxX: -6.20, minZ: -0.19, maxZ: 0.16, color: '#8a8577DD', solid: true, zIndex: 3 },
     // —— 18 幅画：北墙 8 + 西墙 4 + 南墙 2 + 中央隔断 4（展台外不挂画，避开雕像视野）——
     // 北墙西段：三杰 + 盛期序曲
     { id: 'p_leonardo_last_supper', minX: -8.2, maxX: -5.8, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
@@ -121,8 +124,8 @@ export const DAVID_LAYOUT: RoomLayout = {
     { id: 'p_wedding_at_cana', minX: 12.7, maxX: 14.7, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_tintoretto_last_supper', minX: 14.9, maxX: 16.7, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     // 西墙：早期佛罗伦萨 + 尼德兰 + Leonardo 添补
-    { id: 'p_birth_of_venus', minX: -10, maxX: -9.88, minZ: -5.0, maxZ: -3.0, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_botticelli_primavera', minX: -10, maxX: -9.88, minZ: -1.0, maxZ: 1.0, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_birth_of_venus', minX: -10, maxX: -9.88, minZ: -5.5, maxZ: -3.5, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_botticelli_primavera', minX: -10, maxX: -9.88, minZ: -2.5, maxZ: -0.5, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_virgin_of_the_rocks', minX: -10, maxX: -9.88, minZ: 2.01, maxZ: 2.99, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_arnolfini_portrait', minX: -10, maxX: -9.88, minZ: 3.635, maxZ: 4.365, color: '#d4b678DD', zIndex: 5 },
     // 中央隔断东面：北方文艺复兴肖像
