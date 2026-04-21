@@ -33,10 +33,8 @@ JPEG_QUALITY = 85
 # === 画作清单 ===
 # 每项：id, 原 Wikimedia 文件名（%编码）、用 jpg/png 后缀
 # 尺寸按原作比例计算：landscape 固定 W=1.8m、portrait 固定 H=1.2m
-# size_class 决定画幅大小：
-#   landscape → 数值是宽度 (m)，高度由 aspect 反算
-#   portrait  → 数值是高度 (m)，宽度由 aspect 正算
-# 避开北墙 X=[7, 10] 区间的 alcove 凸出结构。
+# 15 幅**主流名作**文艺复兴画作。size 字段：landscape=宽度，portrait=高度。
+# 全部避开 David 展台（X=[7, 10] × Z=[-3.5, 3.5]），全挂在周边墙/中央隔断。
 PAINTINGS = [
     # Zone A - 三杰（北墙 alcove 西侧 X=1 ~ 6）
     {
@@ -49,8 +47,8 @@ PAINTINGS = [
         "orient": "portrait",
         "aspect": 53 / 77,
         "size": 1.2,
-        "pos": (7.0, 1.6, 0.0),
-        "facing": "-X",
+        "pos": (5.0, 1.6, -7.5),
+        "facing": "+Z",
     },
     {
         "id": "school_of_athens",
@@ -62,8 +60,8 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 770 / 500,
         "size": 2.0,
-        "pos": (8.5, 1.7, -3.5),
-        "facing": "-Z",
+        "pos": (-1.0, 1.7, -7.5),
+        "facing": "+Z",
     },
     {
         "id": "creation_of_adam",
@@ -75,7 +73,7 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 1.6,
         "size": 2.0,
-        "pos": (8.5, 1.7, 3.5),
+        "pos": (2.0, 1.7, -7.5),
         "facing": "+Z",
     },
     # Zone B - 威尼斯画派（北墙东段 X=[10.2, 16.95] 内）
@@ -118,7 +116,34 @@ PAINTINGS = [
         "pos": (16.0, 1.6, -7.5),
         "facing": "+Z",
     },
-    # Zone C - 其他文艺复兴（西墙 X=-10，Z 轴分布）
+    # Zone "盛期三杰之序曲" - 北墙西段新增（Leonardo + Raphael 两幅名作）
+    {
+        "id": "leonardo_last_supper",
+        "title_zh": "最后的晚餐",
+        "title_en": "The Last Supper",
+        "artist": "Leonardo da Vinci",
+        "year": "1495–1498",
+        "filename": "Última Cena - Da Vinci 5.jpg",
+        "orient": "landscape",
+        "aspect": 880 / 460,
+        "size": 2.4,
+        "pos": (-7.0, 1.6, -7.5),
+        "facing": "+Z",
+    },
+    {
+        "id": "raphael_sistine_madonna",
+        "title_zh": "西斯廷圣母",
+        "title_en": "Sistine Madonna",
+        "artist": "Raphael",
+        "year": "1513–1514",
+        "filename": "Raphael - The Sistine Madonna - Google Arts & Culture.jpg",
+        "orient": "portrait",
+        "aspect": 196 / 265,
+        "size": 1.4,
+        "pos": (-4.0, 1.7, -7.5),
+        "facing": "+Z",
+    },
+    # Zone "西墙：早期文艺复兴与尼德兰"
     {
         "id": "birth_of_venus",
         "title_zh": "维纳斯的诞生",
@@ -133,6 +158,19 @@ PAINTINGS = [
         "facing": "+X",
     },
     {
+        "id": "botticelli_primavera",
+        "title_zh": "春",
+        "title_en": "Primavera",
+        "artist": "Sandro Botticelli",
+        "year": "c.1480",
+        "filename": "Botticelli-primavera.jpg",
+        "orient": "landscape",
+        "aspect": 314 / 203,
+        "size": 2.0,
+        "pos": (-10.0, 1.7, 0.0),
+        "facing": "+X",
+    },
+    {
         "id": "arnolfini_portrait",
         "title_zh": "阿尔诺芬尼夫妇像",
         "title_en": "The Arnolfini Portrait",
@@ -142,9 +180,10 @@ PAINTINGS = [
         "orient": "portrait",
         "aspect": 60 / 82,
         "size": 1.0,
-        "pos": (-10.0, 1.5, 0.0),
+        "pos": (-10.0, 1.5, 4.0),
         "facing": "+X",
     },
+    # Zone "中央隔断东面" - 北方文艺复兴肖像
     {
         "id": "durer_self_portrait",
         "title_zh": "自画像（1500）",
@@ -155,60 +194,7 @@ PAINTINGS = [
         "orient": "portrait",
         "aspect": 49 / 67,
         "size": 1.0,
-        "pos": (-10.0, 1.5, 4.0),
-        "facing": "+X",
-    },
-    # —— 扩充：北墙西段 + 中央隔断 ——
-    {
-        "id": "fra_angelico_annunciation",
-        "title_zh": "天使报喜",
-        "title_en": "The Annunciation",
-        "artist": "Fra Angelico",
-        "year": "c.1440",
-        "filename": "Fra Angelico, The Annunciation, ca. 1443; Convent of San Marco, Florence (2).jpg",
-        "orient": "landscape",
-        "aspect": 194 / 194,
-        "size": 1.5,
-        "pos": (-6.0, 1.6, -7.5),
-        "facing": "+Z",
-    },
-    {
-        "id": "uccello_san_romano",
-        "title_zh": "圣罗马诺之战",
-        "title_en": "The Battle of San Romano",
-        "artist": "Paolo Uccello",
-        "year": "c.1438",
-        "filename": "Paolo Uccello, The Battle of San Romano, c1436-40, Uffizi, detail2.jpg",
-        "orient": "landscape",
-        "aspect": 320 / 182,
-        "size": 2.0,
-        "pos": (-3.0, 1.6, -7.5),
-        "facing": "+Z",
-    },
-    {
-        "id": "bellini_doge_loredan",
-        "title_zh": "洛伦佐总督肖像",
-        "title_en": "Portrait of Doge Leonardo Loredan",
-        "artist": "Giovanni Bellini",
-        "year": "1501",
-        "filename": "Giovanni Bellini - Portrait of Doge Leonardo Loredan - WGA1745.jpg",
-        "orient": "portrait",
-        "aspect": 45 / 61.5,
-        "size": 1.0,
         "pos": (-0.32, 1.5, -2.0),
-        "facing": "+X",
-    },
-    {
-        "id": "giorgione_tempest",
-        "title_zh": "暴风雨",
-        "title_en": "The Tempest",
-        "artist": "Giorgione",
-        "year": "c.1508",
-        "filename": "Giorgione, The tempest.jpg",
-        "orient": "portrait",
-        "aspect": 73 / 83,
-        "size": 1.1,
-        "pos": (-0.32, 1.55, 2.0),
         "facing": "+X",
     },
     {
@@ -220,10 +206,11 @@ PAINTINGS = [
         "filename": "Hans Holbein the Younger - The Ambassadors - Google Art Project.jpg",
         "orient": "landscape",
         "aspect": 209.5 / 207,
-        "size": 1.5,
-        "pos": (-0.69, 1.6, -2.0),
-        "facing": "-X",
+        "size": 1.3,
+        "pos": (-0.32, 1.6, 2.0),
+        "facing": "+X",
     },
+    # Zone "中央隔断西面" - 尼德兰风景叙事
     {
         "id": "bruegel_hunters_snow",
         "title_zh": "雪中猎人",
@@ -233,6 +220,19 @@ PAINTINGS = [
         "filename": "Pieter Bruegel the Elder - Hunters in the Snow (Winter) - Google Art Project.jpg",
         "orient": "landscape",
         "aspect": 162 / 117,
+        "size": 1.8,
+        "pos": (-0.69, 1.6, -2.0),
+        "facing": "-X",
+    },
+    {
+        "id": "bruegel_tower_of_babel",
+        "title_zh": "巴别塔",
+        "title_en": "The Tower of Babel",
+        "artist": "Pieter Bruegel the Elder",
+        "year": "1563",
+        "filename": "Pieter Bruegel the Elder - The Tower of Babel (Vienna) - Google Art Project - edited.jpg",
+        "orient": "landscape",
+        "aspect": 155 / 114,
         "size": 1.8,
         "pos": (-0.69, 1.6, 2.0),
         "facing": "-X",

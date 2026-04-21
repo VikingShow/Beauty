@@ -109,28 +109,27 @@ export const DAVID_LAYOUT: RoomLayout = {
     { id: 'david_enclosure', minX: 6.95, maxX: 10.2, minZ: -3.58, maxZ: 3.58, color: '#6f6a5aCC', solid: true, zIndex: 3 },
     // —— 中央隔断墙：X=[-0.69, -0.32] × Z=[-3.13, 3.16]，独立纵向墙 ——
     { id: 'center_divider', minX: -0.69, maxX: -0.32, minZ: -3.13, maxZ: 3.16, color: '#8a8577DD', solid: true, zIndex: 3 },
-    // —— 9 幅画作 ——
-    // 三杰：在 David 展台三外墙上
-    { id: 'p_mona_lisa', minX: 6.93, maxX: 7.0, minZ: -0.415, maxZ: 0.415, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_school_of_athens', minX: 7.5, maxX: 9.5, minZ: -3.58, maxZ: -3.5, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_creation_of_adam', minX: 7.5, maxX: 9.5, minZ: 3.5, maxZ: 3.58, color: '#d4b678DD', zIndex: 5 },
-    // 威尼斯：北墙东段
+    // —— 15 幅画全在周边墙体，展台外墙不挂画 ——
+    // 北墙西段：三杰 + 盛期序曲
+    { id: 'p_leonardo_last_supper', minX: -8.2, maxX: -5.8, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_raphael_sistine_madonna', minX: -4.52, maxX: -3.48, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_school_of_athens', minX: -2.0, maxX: 0.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_creation_of_adam', minX: 1.0, maxX: 3.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_mona_lisa', minX: 4.585, maxX: 5.415, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // 北墙东段：威尼斯画派
     { id: 'p_venus_of_urbino', minX: 10.3, maxX: 12.1, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_wedding_at_cana', minX: 12.5, maxX: 14.7, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_tintoretto_last_supper', minX: 15.1, maxX: 16.9, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    // 其他：西墙
+    // 西墙：早期佛罗伦萨 + 尼德兰
     { id: 'p_birth_of_venus', minX: -10, maxX: -9.88, minZ: -5.0, maxZ: -3.0, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_arnolfini_portrait', minX: -10, maxX: -9.88, minZ: -0.365, maxZ: 0.365, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_durer_self_portrait', minX: -10, maxX: -9.88, minZ: 3.635, maxZ: 4.365, color: '#d4b678DD', zIndex: 5 },
-    // 扩充：北墙西段
-    { id: 'p_fra_angelico', minX: -6.75, maxX: -5.25, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_uccello', minX: -4, maxX: -2, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    // 扩充：中央隔断东面
-    { id: 'p_bellini', minX: -0.32, maxX: -0.20, minZ: -2.365, maxZ: -1.635, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_giorgione', minX: -0.32, maxX: -0.20, minZ: 1.515, maxZ: 2.485, color: '#d4b678DD', zIndex: 5 },
-    // 扩充：中央隔断西面
-    { id: 'p_holbein', minX: -0.81, maxX: -0.69, minZ: -2.75, maxZ: -1.25, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_bruegel', minX: -0.81, maxX: -0.69, minZ: 1.1, maxZ: 2.9, color: '#d4b678DD', zIndex: 5 }
+    { id: 'p_botticelli_primavera', minX: -10, maxX: -9.88, minZ: -1.0, maxZ: 1.0, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_arnolfini_portrait', minX: -10, maxX: -9.88, minZ: 3.635, maxZ: 4.365, color: '#d4b678DD', zIndex: 5 },
+    // 中央隔断东面：北方文艺复兴肖像
+    { id: 'p_durer_self_portrait', minX: -0.32, maxX: -0.20, minZ: -2.365, maxZ: -1.635, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_holbein_ambassadors', minX: -0.32, maxX: -0.20, minZ: 1.35, maxZ: 2.65, color: '#d4b678DD', zIndex: 5 },
+    // 中央隔断西面：尼德兰风景叙事
+    { id: 'p_bruegel_hunters', minX: -0.81, maxX: -0.69, minZ: -2.9, maxZ: -1.1, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_bruegel_tower', minX: -0.81, maxX: -0.69, minZ: 1.1, maxZ: 2.9, color: '#d4b678DD', zIndex: 5 }
   ]
 };
 
