@@ -33,9 +33,12 @@ JPEG_QUALITY = 85
 # === 画作清单 ===
 # 每项：id, 原 Wikimedia 文件名（%编码）、用 jpg/png 后缀
 # 尺寸按原作比例计算：landscape 固定 W=1.8m、portrait 固定 H=1.2m
-# 用 Wikimedia Commons 文件名（不带 File: 前缀），脚本会走 API 查真实 URL
+# size_class 决定画幅大小：
+#   landscape → 数值是宽度 (m)，高度由 aspect 反算
+#   portrait  → 数值是高度 (m)，宽度由 aspect 正算
+# 避开北墙 X=[7, 10] 区间的 alcove 凸出结构。
 PAINTINGS = [
-    # Zone A - 三杰（北墙 z=-7.3）
+    # Zone A - 三杰（北墙 alcove 西侧 X=1 ~ 6）
     {
         "id": "mona_lisa",
         "title_zh": "蒙娜丽莎",
@@ -45,7 +48,8 @@ PAINTINGS = [
         "filename": "Mona Lisa, by Leonardo da Vinci, from C2RMF retouched.jpg",
         "orient": "portrait",
         "aspect": 53 / 77,
-        "pos": (5.0, 1.6, -7.5),
+        "size": 1.2,
+        "pos": (1.0, 1.6, -7.5),
         "facing": "+Z",
     },
     {
@@ -57,7 +61,8 @@ PAINTINGS = [
         "filename": "\"The School of Athens\" by Raffaello Sanzio da Urbino.jpg",
         "orient": "landscape",
         "aspect": 770 / 500,
-        "pos": (7.5, 1.6, -7.5),
+        "size": 2.0,
+        "pos": (3.5, 1.7, -7.5),
         "facing": "+Z",
     },
     {
@@ -69,10 +74,11 @@ PAINTINGS = [
         "filename": "Michelangelo - Creation of Adam (cropped).jpg",
         "orient": "landscape",
         "aspect": 1.6,
-        "pos": (10.0, 1.6, -7.5),
+        "size": 2.0,
+        "pos": (6.0, 1.7, -7.5),
         "facing": "+Z",
     },
-    # Zone B - 威尼斯画派后文艺复兴
+    # Zone B - 威尼斯画派（北墙 alcove 东侧 X=11.5 ~ 17.3）
     {
         "id": "venus_of_urbino",
         "title_zh": "乌尔比诺的维纳斯",
@@ -82,7 +88,8 @@ PAINTINGS = [
         "filename": "Tiziano - Venere di Urbino - Google Art Project.jpg",
         "orient": "landscape",
         "aspect": 165 / 119,
-        "pos": (13.0, 1.6, -7.5),
+        "size": 1.8,
+        "pos": (11.5, 1.6, -7.5),
         "facing": "+Z",
     },
     {
@@ -94,7 +101,8 @@ PAINTINGS = [
         "filename": "Paolo Veronese 008.jpg",
         "orient": "landscape",
         "aspect": 994 / 677,
-        "pos": (15.5, 1.6, -7.5),
+        "size": 2.2,
+        "pos": (14.3, 1.8, -7.5),
         "facing": "+Z",
     },
     {
@@ -106,10 +114,11 @@ PAINTINGS = [
         "filename": "Jacopo Tintoretto - The Last Supper - WGA22649.jpg",
         "orient": "landscape",
         "aspect": 568 / 365,
-        "pos": (18.0, 1.6, -7.5),
+        "size": 1.8,
+        "pos": (17.3, 1.6, -7.5),
         "facing": "+Z",
     },
-    # Zone C - 其他文艺复兴（西墙 x=-10）
+    # Zone C - 其他文艺复兴（西墙 X=-10，Z 轴分布）
     {
         "id": "birth_of_venus",
         "title_zh": "维纳斯的诞生",
@@ -119,7 +128,8 @@ PAINTINGS = [
         "filename": "Sandro Botticelli - La nascita di Venere - Google Art Project - edited.jpg",
         "orient": "landscape",
         "aspect": 278.9 / 172.5,
-        "pos": (-10.0, 1.6, -4.0),
+        "size": 2.0,
+        "pos": (-10.0, 1.7, -4.0),
         "facing": "+X",
     },
     {
@@ -131,7 +141,8 @@ PAINTINGS = [
         "filename": "Van Eyck - Arnolfini Portrait.jpg",
         "orient": "portrait",
         "aspect": 60 / 82,
-        "pos": (-10.0, 1.6, 0.0),
+        "size": 1.0,
+        "pos": (-10.0, 1.5, 0.0),
         "facing": "+X",
     },
     {
@@ -143,7 +154,8 @@ PAINTINGS = [
         "filename": "Albrecht Dürer - 1500 self-portrait (High resolution and detail).jpg",
         "orient": "portrait",
         "aspect": 49 / 67,
-        "pos": (-10.0, 1.6, 4.0),
+        "size": 1.0,
+        "pos": (-10.0, 1.5, 4.0),
         "facing": "+X",
     },
 ]
@@ -155,12 +167,13 @@ PAINTING_FORWARD_OFFSET = 0.01 # 画幅在画框前面探出的距离
 
 # === 画作尺寸计算 ===
 def dims_of(p):
-    """返回 (w, h) 世界米。"""
+    """返回 (w, h) 世界米。size 字段：landscape=宽度，portrait=高度。"""
     a = p["aspect"]
+    s = p.get("size", 1.8 if p["orient"] == "landscape" else 1.2)
     if p["orient"] == "landscape":
-        return 1.8, 1.8 / a
+        return s, s / a
     else:
-        return 1.2 * a, 1.2
+        return s * a, s
 
 HTTP_HEADERS = {"User-Agent": "BeautyGalleryDemo/1.0 (HarmonyOS student project)"}
 

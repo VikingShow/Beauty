@@ -105,19 +105,19 @@ export const DAVID_LAYOUT: RoomLayout = {
     { id: 'tree', minX: 12.5, maxX: 18.7, minZ: -2.6, maxZ: 3.1, color: '#5a6a5099', solid: true, zIndex: 2 },
     { id: 'doors', minX: 3.6, maxX: 17.3, minZ: 7.35, maxZ: 7.55, color: '#d4b67899', zIndex: 4 },
     { id: 'window', minX: 20.35, maxX: 20.55, minZ: -7.3, maxZ: 7.3, color: '#9eb4d0AA', zIndex: 4 },
-    // —— 9 幅画作（金色 mark，对应 add_paintings.py 的位置）——
-    // Zone A 三杰（北墙 z=-7.43 画幅中心）
-    { id: 'p_mona_lisa', minX: 4.59, maxX: 5.41, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_school_of_athens', minX: 6.6, maxX: 8.4, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_creation_of_adam', minX: 9.1, maxX: 10.9, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    // Zone B 威尼斯
-    { id: 'p_venus_of_urbino', minX: 12.1, maxX: 13.9, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_wedding_at_cana', minX: 14.6, maxX: 16.4, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_tintoretto_last_supper', minX: 17.1, maxX: 18.9, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    // Zone C 其他（西墙 x=-9.93）
-    { id: 'p_birth_of_venus', minX: -10, maxX: -9.88, minZ: -4.9, maxZ: -3.1, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_arnolfini_portrait', minX: -10, maxX: -9.88, minZ: -0.44, maxZ: 0.44, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_durer_self_portrait', minX: -10, maxX: -9.88, minZ: 3.56, maxZ: 4.44, color: '#d4b678DD', zIndex: 5 }
+    // —— 9 幅画作（对应 add_paintings.py 的新位置）——
+    // Zone A 三杰（北墙 alcove 西侧）
+    { id: 'p_mona_lisa', minX: 0.585, maxX: 1.415, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_school_of_athens', minX: 2.5, maxX: 4.5, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_creation_of_adam', minX: 5.0, maxX: 7.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // Zone B 威尼斯（北墙 alcove 东侧）
+    { id: 'p_venus_of_urbino', minX: 10.6, maxX: 12.4, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_wedding_at_cana', minX: 13.2, maxX: 15.4, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_tintoretto_last_supper', minX: 16.4, maxX: 18.2, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // Zone C 其他（西墙）
+    { id: 'p_birth_of_venus', minX: -10, maxX: -9.88, minZ: -5.0, maxZ: -3.0, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_arnolfini_portrait', minX: -10, maxX: -9.88, minZ: -0.365, maxZ: 0.365, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_durer_self_portrait', minX: -10, maxX: -9.88, minZ: 3.635, maxZ: 4.365, color: '#d4b678DD', zIndex: 5 }
   ]
 };
 
