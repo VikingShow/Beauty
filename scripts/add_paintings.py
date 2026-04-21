@@ -49,7 +49,7 @@ PAINTINGS = [
         "orient": "portrait",
         "aspect": 53 / 77,
         "size": 1.2,
-        "pos": (1.0, 1.6, -7.5),
+        "pos": (1.3, 1.6, -7.5),
         "facing": "+Z",
     },
     {
@@ -62,7 +62,7 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 770 / 500,
         "size": 2.0,
-        "pos": (3.5, 1.7, -7.5),
+        "pos": (3.3, 1.7, -7.5),
         "facing": "+Z",
     },
     {
@@ -75,10 +75,10 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 1.6,
         "size": 2.0,
-        "pos": (6.0, 1.7, -7.5),
+        "pos": (5.8, 1.7, -7.5),
         "facing": "+Z",
     },
-    # Zone B - 威尼斯画派（北墙 alcove 东侧 X=11.5 ~ 17.3）
+    # Zone B - 威尼斯画派（北墙 alcove 东侧 X=11 ~ 15.7，避开 X>16.95 的东北斜角）
     {
         "id": "venus_of_urbino",
         "title_zh": "乌尔比诺的维纳斯",
@@ -89,7 +89,7 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 165 / 119,
         "size": 1.8,
-        "pos": (11.5, 1.6, -7.5),
+        "pos": (11.0, 1.6, -7.5),
         "facing": "+Z",
     },
     {
@@ -102,7 +102,7 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 994 / 677,
         "size": 2.2,
-        "pos": (14.3, 1.8, -7.5),
+        "pos": (13.4, 1.8, -7.5),
         "facing": "+Z",
     },
     {
@@ -115,7 +115,7 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 568 / 365,
         "size": 1.8,
-        "pos": (17.3, 1.6, -7.5),
+        "pos": (15.7, 1.6, -7.5),
         "facing": "+Z",
     },
     # Zone C - 其他文艺复兴（西墙 X=-10，Z 轴分布）

@@ -101,19 +101,23 @@ export const DAVID_LAYOUT: RoomLayout = {
   features: [
     // —— 场景结构 ——
     { id: 'stairs', minX: 10.0, maxX: 13.6, minZ: -7.4, maxZ: 7.4, color: '#1c1c2688', zIndex: 1 },
+    // David 的 alcove：从北墙凸出的多面体结构（solid 阻挡玩家走入）
+    { id: 'alcove', minX: 7.0, maxX: 9.5, minZ: -7.5, maxZ: 1.0, color: '#6f6a5aBB', solid: true, zIndex: 2 },
     { id: 'stand', minX: 7.3, maxX: 8.7, minZ: -0.85, maxZ: 0.65, color: '#d4b678', solid: true, zIndex: 3 },
     { id: 'tree', minX: 12.5, maxX: 18.7, minZ: -2.6, maxZ: 3.1, color: '#5a6a5099', solid: true, zIndex: 2 },
     { id: 'doors', minX: 3.6, maxX: 17.3, minZ: 7.35, maxZ: 7.55, color: '#d4b67899', zIndex: 4 },
     { id: 'window', minX: 20.35, maxX: 20.55, minZ: -7.3, maxZ: 7.3, color: '#9eb4d0AA', zIndex: 4 },
-    // —— 9 幅画作（对应 add_paintings.py 的新位置）——
-    // Zone A 三杰（北墙 alcove 西侧）
-    { id: 'p_mona_lisa', minX: 0.585, maxX: 1.415, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_school_of_athens', minX: 2.5, maxX: 4.5, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_creation_of_adam', minX: 5.0, maxX: 7.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    // Zone B 威尼斯（北墙 alcove 东侧）
-    { id: 'p_venus_of_urbino', minX: 10.6, maxX: 12.4, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_wedding_at_cana', minX: 13.2, maxX: 15.4, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_tintoretto_last_supper', minX: 16.4, maxX: 18.2, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // 东北斜角（主北墙止于 X=16.95，东北是斜切墙）
+    { id: 'ne_corner', minX: 16.95, maxX: 20.5, minZ: -7.5, maxZ: -3.5, color: '#44444466', zIndex: 1 },
+    // —— 9 幅画作（新位置）——
+    // Zone A 三杰
+    { id: 'p_mona_lisa', minX: 0.885, maxX: 1.715, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_school_of_athens', minX: 2.3, maxX: 4.3, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_creation_of_adam', minX: 4.8, maxX: 6.8, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // Zone B 威尼斯
+    { id: 'p_venus_of_urbino', minX: 10.1, maxX: 11.9, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_wedding_at_cana', minX: 12.3, maxX: 14.5, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_tintoretto_last_supper', minX: 14.8, maxX: 16.6, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     // Zone C 其他（西墙）
     { id: 'p_birth_of_venus', minX: -10, maxX: -9.88, minZ: -5.0, maxZ: -3.0, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_arnolfini_portrait', minX: -10, maxX: -9.88, minZ: -0.365, maxZ: 0.365, color: '#d4b678DD', zIndex: 5 },
