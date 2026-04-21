@@ -239,12 +239,27 @@ export function findExhibit(id: string): Exhibit | undefined {
 /** 画作触发半径：XZ 平面距离 < 2.5m 触发。 */
 const ACTIVATION_RADIUS: number = 2.5;
 
+interface FacingXZ {
+  x: number;
+  z: number;
+}
+
 /** 画作正面朝向向量（指向观者）。 */
-function facingVec(f: Facing): { x: number, z: number } {
-  if (f === '+X') return { x: 1, z: 0 };
-  if (f === '-X') return { x: -1, z: 0 };
-  if (f === '+Z') return { x: 0, z: 1 };
-  return { x: 0, z: -1 }; // '-Z'
+function facingVec(f: Facing): FacingXZ {
+  if (f === '+X') {
+    const v: FacingXZ = { x: 1, z: 0 };
+    return v;
+  }
+  if (f === '-X') {
+    const v: FacingXZ = { x: -1, z: 0 };
+    return v;
+  }
+  if (f === '+Z') {
+    const v: FacingXZ = { x: 0, z: 1 };
+    return v;
+  }
+  const v: FacingXZ = { x: 0, z: -1 };
+  return v;
 }
 
 /**
@@ -263,7 +278,7 @@ export function nearestExhibitId(
     const d2: number = dx * dx + dz * dz;
     if (d2 >= bestDist2) continue;
     // 玩家必须在画的正面侧：(player - anchor) · facing > 0
-    const f = facingVec(e.facing);
+    const f: FacingXZ = facingVec(e.facing);
     if (dx * f.x + dz * f.z <= 0) continue;
     bestDist2 = d2;
     bestId = e.id;
