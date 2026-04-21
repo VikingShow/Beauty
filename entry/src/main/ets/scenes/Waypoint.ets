@@ -104,11 +104,6 @@ export const DAVID_LAYOUT: RoomLayout = {
     { id: 'tree', minX: 12.5, maxX: 18.7, minZ: -2.6, maxZ: 3.1, color: '#5a6a5099', solid: true, zIndex: 2 },
     { id: 'window', minX: 20.35, maxX: 20.55, minZ: -7.3, maxZ: 7.3, color: '#9eb4d0AA', zIndex: 4 },
     { id: 'doors', minX: 3.6, maxX: 17.3, minZ: 7.35, maxZ: 7.55, color: '#d4b67899', zIndex: 4 },
-    // —— 中央展位区南北两道分隔墙（高 2.19m，挡视野；从 walls mesh Y=±3.73 解析）——
-    // 北分隔：从西墙留出 3.8m 通道，到 X=18.5 之间是连续矮墙
-    { id: 'partition_north', minX: -6.19, maxX: 18.51, minZ: -3.79, maxZ: -3.67, color: '#a89c84BB', solid: true, zIndex: 2 },
-    // 南分隔：同上对称
-    { id: 'partition_south', minX: -6.19, maxX: 18.51, minZ: 3.67, maxZ: 3.79, color: '#a89c84BB', solid: true, zIndex: 2 },
     // —— David 展台（实墙大方块，高 4.87m 到屋顶）——
     // 来自 analyze_walls.py 精确几何：X=[7.02, 10.20], Z=[-3.44, +3.44]
     { id: 'david_enclosure', minX: 7.02, maxX: 10.20, minZ: -3.44, maxZ: 3.44, color: '#6f6a5aCC', solid: true, zIndex: 3 },
