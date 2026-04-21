@@ -41,11 +41,18 @@ struct DavidScene {
   @State private playerZ: number = DAVID_WAYPOINTS[0].position.z;
   @State private playerYaw: number = DAVID_WAYPOINTS[0].yaw;
   @State private currentExhibitId: string = '';
+  @State private loadingOpacity: number = 1;     // 加载覆盖层不透明度（1→0 淡出）
+  @State private sceneOpacity: number = 0;       // 3D 场景不透明度（0→1 淡入）
+  @State private loadingDots: string = '';       // "第一关 · David 加载中" 后面的跳动省略号
+  private dotsTimer: number | undefined = undefined;
 
   private sceneInstance: Scene | undefined = undefined;
   private controller: FirstPersonCameraController = new FirstPersonCameraController(DAVID_WAYPOINTS[0]);
 
   async aboutToAppear(): Promise<void> {
+    // 启动加载提示的省略号动画
+    this.startDotsAnimation();
+
     this.controller.setOnUpdate(() => {
       this.playerX = this.controller.getPositionX();
       this.playerZ = this.controller.getPositionZ();
@@ -124,15 +131,45 @@ struct DavidScene {
 
       this.sceneInstance = scene;
       this.sceneReady = true;
+      // 场景就绪：3D 立即淡入，加载层延后 120ms 淡出，形成交叉过渡
+      animateTo({ duration: 500, curve: Curve.EaseInOut }, () => {
+        this.sceneOpacity = 1;
+      });
+      setTimeout(() => {
+        animateTo({ duration: 500, curve: Curve.EaseInOut }, () => {
+          this.loadingOpacity = 0;
+        });
+      }, 120);
+      this.stopDotsAnimation();
     } catch (e) {
       const err = e as BusinessError;
       this.errorMsg = err.message ?? JSON.stringify(e);
       hilog.error(DOMAIN, 'DavidScene', 'init failed: %{public}s', JSON.stringify(e));
+      this.stopDotsAnimation();
     }
   }
 
   aboutToDisappear(): void {
     this.controller.detach();
+    this.stopDotsAnimation();
+  }
+
+  private startDotsAnimation(): void {
+    const cycle: string[] = ['', '·', '··', '···'];
+    let i: number = 0;
+    const tick = (): void => {
+      this.loadingDots = cycle[i % cycle.length];
+      i++;
+      this.dotsTimer = setTimeout(tick, 350);
+    };
+    tick();
+  }
+
+  private stopDotsAnimation(): void {
+    if (this.dotsTimer !== undefined) {
+      clearTimeout(this.dotsTimer);
+      this.dotsTimer = undefined;
+    }
   }
 
   private teleport(wp: Waypoint): void {
@@ -152,6 +189,7 @@ struct DavidScene {
           .width('100%')
           .height('100%')
           .backgroundColor('#0a0a1a')
+          .opacity(this.sceneOpacity)
           .gesture(
             PanGesture({ fingers: 1 })
               .onActionStart(() => {
@@ -239,6 +277,47 @@ struct DavidScene {
       .width('100%')
       .justifyContent(FlexAlign.Center)
       .position({ x: 0, y: '88%' })
+
+      // 加载覆盖层：放在最后，覆盖所有 UI chrome，淡出后才露出场景+按钮
+      if (this.loadingOpacity > 0) {
+        Column({ space: 28 }) {
+          Text('第一关')
+            .fontSize(14)
+            .fontColor('#8a8a9a')
+            .letterSpacing(6)
+
+          Text('David')
+            .fontSize(56)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#f5e6c8')
+            .letterSpacing(10)
+
+          LoadingProgress()
+            .width(48)
+            .height(48)
+            .color('#d4b678')
+            .margin({ top: 28 })
+
+          Text(`加载中${this.loadingDots}`)
+            .fontSize(15)
+            .fontColor('#d4b67899')
+            .letterSpacing(2)
+            .width(140)
+            .textAlign(TextAlign.Center)
+        }
+        .width('100%')
+        .height('100%')
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+        .linearGradient({
+          angle: 135,
+          colors: [['#0a0a1a', 0], ['#1a1a2e', 0.5], ['#0f0f1f', 1]]
+        })
+        .opacity(this.loadingOpacity)
+        .hitTestBehavior(
+          this.loadingOpacity > 0.02 ? HitTestMode.Block : HitTestMode.Transparent
+        )
+      }
     }
     .width('100%')
     .height('100%')
