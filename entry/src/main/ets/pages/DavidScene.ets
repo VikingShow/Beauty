@@ -11,8 +11,10 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { AABB2, FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
 import { DAVID_LAYOUT, DAVID_WAYPOINTS, SceneFeature, Waypoint } from '../scenes/Waypoint';
+import { nearestExhibitId } from '../scenes/Exhibits';
 import { Minimap } from '../components/Minimap';
 import { Joystick } from '../components/Joystick';
+import { ExhibitCard } from '../components/ExhibitCard';
 
 const DOMAIN = 0x0102;
 
@@ -38,6 +40,7 @@ struct DavidScene {
   @State private playerX: number = DAVID_WAYPOINTS[0].position.x;
   @State private playerZ: number = DAVID_WAYPOINTS[0].position.z;
   @State private playerYaw: number = DAVID_WAYPOINTS[0].yaw;
+  @State private currentExhibitId: string = '';
 
   private sceneInstance: Scene | undefined = undefined;
   private controller: FirstPersonCameraController = new FirstPersonCameraController(DAVID_WAYPOINTS[0]);
@@ -47,6 +50,10 @@ struct DavidScene {
       this.playerX = this.controller.getPositionX();
       this.playerZ = this.controller.getPositionZ();
       this.playerYaw = this.controller.getYaw();
+      const next: string = nearestExhibitId(this.playerX, this.playerZ);
+      if (next !== this.currentExhibitId) {
+        this.currentExhibitId = next;
+      }
     });
 
     // 设置可行区 + 碰撞障碍
@@ -207,6 +214,11 @@ struct DavidScene {
       })
         .position({ x: 32, y: '100%' })
         .markAnchor({ x: 0, y: 192 })
+
+      // 顶部居中展品介绍卡（走近画作自动显示）
+      ExhibitCard({ exhibitId: this.currentExhibitId })
+        .position({ x: '50%', y: 70 })
+        .markAnchor({ x: 260, y: 0 })
 
       // 底部航点切换条
       Row({ space: 12 }) {
