@@ -105,21 +105,22 @@ export const DAVID_LAYOUT: RoomLayout = {
     { id: 'window', minX: 20.35, maxX: 20.55, minZ: -7.3, maxZ: 7.3, color: '#9eb4d0AA', zIndex: 4 },
     { id: 'ne_corner', minX: 16.95, maxX: 20.5, minZ: -7.5, maxZ: -3.5, color: '#44444466', zIndex: 1 },
     { id: 'doors', minX: 3.6, maxX: 17.3, minZ: 7.35, maxZ: 7.55, color: '#d4b67899', zIndex: 4 },
-    // —— David 展台：X=[7, 10.2]、Z=[-3.5, 3.5]，三外墙 + 内部含 alcove ——
-    { id: 'david_enclosure', minX: 6.95, maxX: 10.2, minZ: -3.58, maxZ: 3.58, color: '#6f6a5aCC', solid: true, zIndex: 3 },
+    // —— David 展台（实墙大方块，高 4.87m 到屋顶）——
+    // 来自 analyze_walls.py 精确几何：X=[7.02, 10.20], Z=[-3.44, +3.44]
+    { id: 'david_enclosure', minX: 7.02, maxX: 10.20, minZ: -3.44, maxZ: 3.44, color: '#6f6a5aCC', solid: true, zIndex: 3 },
     // —— 中央隔断墙：X=[-0.69, -0.32] × Z=[-3.13, 3.16]，独立纵向墙 ——
     { id: 'center_divider', minX: -0.69, maxX: -0.32, minZ: -3.13, maxZ: 3.16, color: '#8a8577DD', solid: true, zIndex: 3 },
-    // —— 15 幅画全在周边墙体，展台外墙不挂画 ——
+    // —— 18 幅画：周边墙 11 + 中央隔断 4 + David 展台外围 3（三杰作围绕米开朗琪罗雕像）——
     // 北墙西段：三杰 + 盛期序曲
     { id: 'p_leonardo_last_supper', minX: -8.2, maxX: -5.8, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_raphael_sistine_madonna', minX: -4.52, maxX: -3.48, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_school_of_athens', minX: -2.0, maxX: 0.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_creation_of_adam', minX: 1.0, maxX: 3.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_mona_lisa', minX: 4.585, maxX: 5.415, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    // 北墙东段：威尼斯画派
-    { id: 'p_venus_of_urbino', minX: 10.3, maxX: 12.1, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_wedding_at_cana', minX: 12.5, maxX: 14.7, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_tintoretto_last_supper', minX: 15.1, maxX: 16.9, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // 北墙东段：威尼斯画派（避开 David 展台 X=10.20 东侧 0.3m）
+    { id: 'p_venus_of_urbino', minX: 10.6, maxX: 12.4, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_wedding_at_cana', minX: 12.7, maxX: 14.7, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_tintoretto_last_supper', minX: 14.9, maxX: 16.7, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
     // 西墙：早期佛罗伦萨 + 尼德兰
     { id: 'p_birth_of_venus', minX: -10, maxX: -9.88, minZ: -5.0, maxZ: -3.0, color: '#d4b678DD', zIndex: 5 },
     { id: 'p_botticelli_primavera', minX: -10, maxX: -9.88, minZ: -1.0, maxZ: 1.0, color: '#d4b678DD', zIndex: 5 },
@@ -129,7 +130,13 @@ export const DAVID_LAYOUT: RoomLayout = {
     { id: 'p_holbein_ambassadors', minX: -0.32, maxX: -0.20, minZ: 1.35, maxZ: 2.65, color: '#d4b678DD', zIndex: 5 },
     // 中央隔断西面：尼德兰风景叙事
     { id: 'p_bruegel_hunters', minX: -0.81, maxX: -0.69, minZ: -2.9, maxZ: -1.1, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_bruegel_tower', minX: -0.81, maxX: -0.69, minZ: 1.1, maxZ: 2.9, color: '#d4b678DD', zIndex: 5 }
+    { id: 'p_bruegel_tower', minX: -0.81, maxX: -0.69, minZ: 1.1, maxZ: 2.9, color: '#d4b678DD', zIndex: 5 },
+    // David 展台四围：盛期三杰围绕米开朗琪罗的雕像
+    // 西面 X=7.02 挂 Doni Tondo（Michelangelo 本人）+ 岩间圣母（Leonardo）
+    { id: 'p_doni_tondo', minX: 6.90, maxX: 7.02, minZ: -2.1, maxZ: -0.9, color: '#d4b678DD', zIndex: 6 },
+    { id: 'p_virgin_of_the_rocks', minX: 6.90, maxX: 7.02, minZ: 1.01, maxZ: 1.99, color: '#d4b678DD', zIndex: 6 },
+    // 东面 X=10.20 挂基督显圣（Raphael 遗作）
+    { id: 'p_raphael_transfiguration', minX: 10.20, maxX: 10.32, minZ: -0.68, maxZ: 0.68, color: '#d4b678DD', zIndex: 6 }
   ]
 };
 

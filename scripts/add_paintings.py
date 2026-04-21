@@ -87,7 +87,7 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 165 / 119,
         "size": 1.8,
-        "pos": (11.2, 1.6, -7.5),
+        "pos": (11.5, 1.6, -7.5),
         "facing": "+Z",
     },
     {
@@ -99,8 +99,8 @@ PAINTINGS = [
         "filename": "Paolo Veronese 008.jpg",
         "orient": "landscape",
         "aspect": 994 / 677,
-        "size": 2.2,
-        "pos": (13.6, 1.8, -7.5),
+        "size": 2.0,
+        "pos": (13.7, 1.7, -7.5),
         "facing": "+Z",
     },
     {
@@ -113,7 +113,7 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 568 / 365,
         "size": 1.8,
-        "pos": (16.0, 1.6, -7.5),
+        "pos": (15.8, 1.6, -7.5),
         "facing": "+Z",
     },
     # Zone "盛期三杰之序曲" - 北墙西段新增（Leonardo + Raphael 两幅名作）
@@ -236,6 +236,49 @@ PAINTINGS = [
         "size": 1.8,
         "pos": (-0.69, 1.6, 2.0),
         "facing": "-X",
+    },
+    # Zone "David 展台四围" - 盛期三杰环绕 David 雕像（Michelangelo 本人之作、Leonardo、Raphael）
+    # 展台：X=[7.02, 10.20] × Z=[-3.44, +3.44]，四面都是实墙，高 4.87m
+    # W 面（X=7.02, facing -X）: Doni Tondo + Virgin of the Rocks
+    # E 面（X=10.20, facing +X）: Transfiguration
+    {
+        "id": "doni_tondo",
+        "title_zh": "多尼圆形画（圣家族）",
+        "title_en": "Doni Tondo",
+        "artist": "Michelangelo",
+        "year": "c.1506",
+        "filename": "Tondo Doni by Michelangelo Buonarroti-Uffizi.jpg",
+        "orient": "landscape",
+        "aspect": 1.0,
+        "size": 1.2,
+        "pos": (7.02, 1.9, -1.5),
+        "facing": "-X",
+    },
+    {
+        "id": "virgin_of_the_rocks",
+        "title_zh": "岩间圣母",
+        "title_en": "Virgin of the Rocks",
+        "artist": "Leonardo da Vinci",
+        "year": "1483–1486",
+        "filename": "Leonardo Da Vinci - Vergine delle Rocce (Louvre).jpg",
+        "orient": "portrait",
+        "aspect": 122 / 199,
+        "size": 1.6,
+        "pos": (7.02, 1.7, 1.5),
+        "facing": "-X",
+    },
+    {
+        "id": "raphael_transfiguration",
+        "title_zh": "基督显圣",
+        "title_en": "The Transfiguration",
+        "artist": "Raphael",
+        "year": "1516–1520",
+        "filename": "Raphael - The Transfiguration - Google Art Project.jpg",
+        "orient": "portrait",
+        "aspect": 278 / 410,
+        "size": 2.0,
+        "pos": (10.20, 1.9, 0.0),
+        "facing": "+X",
     },
 ]
 
