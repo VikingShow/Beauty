@@ -112,37 +112,33 @@ export const DAVID_LAYOUT: RoomLayout = {
     // —— 西北通顶隔断 + 立柱（通顶 4.87m）：从西墙 X=-10 横插到 X=-6.20 的中央立柱 ——
     // 对应 walls mesh Y=±0.2 那两平面 + X=-6.25 的立柱
     { id: 'nw_partition', minX: -10.0, maxX: -6.20, minZ: -0.19, maxZ: 0.16, color: '#8a8577DD', solid: true, zIndex: 3 },
-    // —— 23 幅画：北墙 8 + 西墙 4 + 南墙 4 + 中央隔断 4 + 展台 W/E 3 ——
-    // 北墙西段：三杰 + 盛期序曲（高度统一：风景 H=1.3，肖像 H=1.4，Y 中心 1.7）
+    // —— 19 幅策展画作（Space A/B/C 结构）：北墙 8 + 西墙 3 + 南墙 2 + 展台 E/W 2 + 中央隔断 4 ——
+    // Space A · 理性与秩序（北墙西段 Leonardo 三杰 / 早期佛罗伦萨）
     { id: 'p_leonardo_last_supper', minX: -8.25, maxX: -5.75, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_raphael_sistine_madonna', minX: -4.52, maxX: -3.48, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_school_of_athens', minX: -2.0, maxX: 0.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_creation_of_adam', minX: 1.25, maxX: 3.35, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_mona_lisa', minX: 4.52, maxX: 5.48, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    // 北墙东段：威尼斯画派，3 幅等间距（每间隔 ≈ 0.4 m）
+    { id: 'p_mona_lisa', minX: -4.78, maxX: -3.82, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_school_of_athens', minX: -2.6, maxX: -0.6, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_creation_of_adam', minX: 0.6, maxX: 3.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_birth_of_venus', minX: 4.0, maxX: 6.0, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // Space B/C · 北墙东段（威尼斯 + Raphael 圣母）
     { id: 'p_venus_of_urbino', minX: 11.0, maxX: 12.6, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_wedding_at_cana', minX: 13.0, maxX: 14.6, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_tintoretto_last_supper', minX: 15.0, maxX: 16.6, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
-    // 西墙：早期佛罗伦萨 + 尼德兰 + Leonardo 添补
-    { id: 'p_birth_of_venus', minX: -10, maxX: -9.88, minZ: -5.5, maxZ: -3.5, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_botticelli_primavera', minX: -10, maxX: -9.88, minZ: -2.5, maxZ: -0.5, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_virgin_of_the_rocks', minX: -10, maxX: -9.88, minZ: 2.01, maxZ: 2.99, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_arnolfini_portrait', minX: -10, maxX: -9.88, minZ: 3.635, maxZ: 4.365, color: '#d4b678DD', zIndex: 5 },
-    // 中央隔断东面：北方文艺复兴肖像
-    { id: 'p_durer_self_portrait', minX: -0.32, maxX: -0.20, minZ: -2.365, maxZ: -1.635, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_holbein_ambassadors', minX: -0.32, maxX: -0.20, minZ: 1.35, maxZ: 2.65, color: '#d4b678DD', zIndex: 5 },
-    // 中央隔断西面：尼德兰风景叙事
-    { id: 'p_bruegel_hunters', minX: -0.81, maxX: -0.69, minZ: -2.9, maxZ: -1.1, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_bruegel_tower', minX: -0.81, maxX: -0.69, minZ: 1.1, maxZ: 2.9, color: '#d4b678DD', zIndex: 5 },
-    // 南墙西段：4 幅依次排开，从 Titian 升天到 Raphael 遗作
-    { id: 'p_titian_assumption', minX: -5.52, maxX: -4.48, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_mantegna_lamentation', minX: -3.60, maxX: -2.40, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_doni_tondo', minX: -1.40, maxX: -0.20, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
-    { id: 'p_raphael_transfiguration', minX: 0.72, maxX: 2.08, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
-    // David 展台四围：盛期三杰 + Caravaggio 巴洛克David
-    { id: 'p_caravaggio_david', minX: 6.90, maxX: 7.02, minZ: -2.065, maxZ: -0.935, color: '#d4b678DD', zIndex: 6 },
-    { id: 'p_lady_with_ermine', minX: 6.90, maxX: 7.02, minZ: 1.06, maxZ: 1.94, color: '#d4b678DD', zIndex: 6 },
-    { id: 'p_raphael_madonna_meadow', minX: 10.20, maxX: 10.32, minZ: -0.545, maxZ: 0.545, color: '#d4b678DD', zIndex: 6 }
+    { id: 'p_botticelli_primavera', minX: 13.1, maxX: 15.1, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_raphael_sistine_madonna', minX: 15.48, maxX: 16.52, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // 西墙：Space A 三件（Leonardo / Masaccio / Fra Angelico）
+    { id: 'p_virgin_of_the_rocks', minX: -10, maxX: -9.88, minZ: -5.49, maxZ: -4.51, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_fra_angelico_deposition', minX: -10, maxX: -9.88, minZ: -2.7, maxZ: -1.3, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_masaccio_trinity', minX: -10, maxX: -9.88, minZ: 1.475, maxZ: 2.525, color: '#d4b678DD', zIndex: 5 },
+    // 南墙西段：Space B 历史题材（Mantegna / Uccello）
+    { id: 'p_mantegna_triumphs', minX: -6.2, maxX: -4.8, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_uccello_san_romano', minX: -3.4, maxX: -1.6, minZ: 7.38, maxZ: 7.50, color: '#d4b678DD', zIndex: 5 },
+    // David 展台：西面挂 Michelangelo《最后的审判》（通顶垂直），东面挂 Raphael 草地圣母
+    { id: 'p_michelangelo_last_judgment', minX: 6.90, maxX: 7.02, minZ: -1.14, maxZ: 1.14, color: '#d4b678DD', zIndex: 6 },
+    { id: 'p_raphael_madonna_meadow', minX: 10.20, maxX: 10.32, minZ: -0.545, maxZ: 0.545, color: '#d4b678DD', zIndex: 6 },
+    // 中央隔断东面（Space C 宗教）：Bellini + Piero
+    { id: 'p_bellini_resurrection', minX: -0.32, maxX: -0.20, minZ: -2.56, maxZ: -1.44, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_piero_baptism', minX: -0.32, maxX: -0.20, minZ: 1.515, maxZ: 2.485, color: '#d4b678DD', zIndex: 5 },
+    // 中央隔断西面（Space C 威尼斯 + 肖像）：Giorgione + Antonello
+    { id: 'p_giorgione_tempest', minX: -0.81, maxX: -0.69, minZ: -2.535, maxZ: -1.465, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_antonello_portrait', minX: -0.81, maxX: -0.69, minZ: 1.645, maxZ: 2.355, color: '#d4b678DD', zIndex: 5 }
   ]
 };
 
