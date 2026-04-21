@@ -90,25 +90,34 @@ export const GALLERY_WAYPOINTS: Waypoint[] = [
 // 模型 X 范围 −10 ~ +20.5，Z 范围 ±7.5，地板顶面 Y ≈ −0.06，视高 1.65
 
 export const DAVID_LAYOUT: RoomLayout = {
-  worldWidth: 15.5,     // Z 轴跨度（小地图横向）
-  worldDepth: 31,       // X 轴跨度（小地图纵向）
-  worldCenterX: 5.25,   // 画廊中心 X
+  worldWidth: 15.5,
+  worldDepth: 31,
+  worldCenterX: 5.25,
   worldCenterZ: 0,
   internalWalls: [],
-  imageNorthYawOffset: Math.PI / 2,  // 小地图向上对应 yaw=π/2（forward=−X），朝 David 深处
+  imageNorthYawOffset: Math.PI / 2,
   boundsMin: { x: -9.5, z: -7 },
   boundsMax: { x: 20, z: 7 },
   features: [
-    // 入口台阶（向下的 grating）
+    // —— 场景结构 ——
     { id: 'stairs', minX: 10.0, maxX: 13.6, minZ: -7.4, maxZ: 7.4, color: '#1c1c2688', zIndex: 1 },
-    // David 基座
     { id: 'stand', minX: 7.3, maxX: 8.7, minZ: -0.85, maxZ: 0.65, color: '#d4b678', solid: true, zIndex: 3 },
-    // 树雕 + 玻璃罩
     { id: 'tree', minX: 12.5, maxX: 18.7, minZ: -2.6, maxZ: 3.1, color: '#5a6a5099', solid: true, zIndex: 2 },
-    // 门墙（南侧 Z=+7.5）
     { id: 'doors', minX: 3.6, maxX: 17.3, minZ: 7.35, maxZ: 7.55, color: '#d4b67899', zIndex: 4 },
-    // 窗墙（X=+20.5 东墙）
-    { id: 'window', minX: 20.35, maxX: 20.55, minZ: -7.3, maxZ: 7.3, color: '#9eb4d0AA', zIndex: 4 }
+    { id: 'window', minX: 20.35, maxX: 20.55, minZ: -7.3, maxZ: 7.3, color: '#9eb4d0AA', zIndex: 4 },
+    // —— 9 幅画作（金色 mark，对应 add_paintings.py 的位置）——
+    // Zone A 三杰（北墙 z=-7.43 画幅中心）
+    { id: 'p_mona_lisa', minX: 4.59, maxX: 5.41, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_school_of_athens', minX: 6.6, maxX: 8.4, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_creation_of_adam', minX: 9.1, maxX: 10.9, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // Zone B 威尼斯
+    { id: 'p_venus_of_urbino', minX: 12.1, maxX: 13.9, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_wedding_at_cana', minX: 14.6, maxX: 16.4, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_tintoretto_last_supper', minX: 17.1, maxX: 18.9, minZ: -7.5, maxZ: -7.38, color: '#d4b678DD', zIndex: 5 },
+    // Zone C 其他（西墙 x=-9.93）
+    { id: 'p_birth_of_venus', minX: -10, maxX: -9.88, minZ: -4.9, maxZ: -3.1, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_arnolfini_portrait', minX: -10, maxX: -9.88, minZ: -0.44, maxZ: 0.44, color: '#d4b678DD', zIndex: 5 },
+    { id: 'p_durer_self_portrait', minX: -10, maxX: -9.88, minZ: 3.56, maxZ: 4.44, color: '#d4b678DD', zIndex: 5 }
   ]
 };
 
