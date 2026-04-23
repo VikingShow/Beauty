@@ -112,7 +112,7 @@ export struct ExhibitCard {
         .fillColor('#d4b678')
     }
     .padding({ left: 18, right: 14, top: 10, bottom: 10 })
-    .backgroundColor('#1a1a2eF0')
+    .backgroundColor('#F01a1a2e')
     .borderColor('#d4b678')
     .borderWidth(1)
     .borderRadius(20)
@@ -219,7 +219,7 @@ export struct ExhibitCard {
     }
     .width(520)
     .padding({ left: 20, right: 14, top: 12, bottom: 14 })
-    .backgroundColor('#1a1a2eF0')
+    .backgroundColor('#F01a1a2e')
     .borderColor('#d4b678')
     .borderWidth(1)
     .borderRadius(12)

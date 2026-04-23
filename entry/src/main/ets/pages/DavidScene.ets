@@ -337,7 +337,7 @@ struct DavidScene {
           .fontWeight(FontWeight.Medium)
       }
       .padding({ left: 14, right: 14, top: 7, bottom: 7 })
-      .backgroundColor('#1a1a2eE6')
+      .backgroundColor('#E61a1a2e')
       .borderColor('#d4b67888')
       .borderWidth(1)
       .borderRadius(18)

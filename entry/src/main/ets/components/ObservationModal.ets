@@ -46,7 +46,7 @@ export struct ObservationModal {
         Column()
           .width('100%')
           .height('100%')
-          .backgroundColor('#000000E0')
+          .backgroundColor('#E0000000')
           .opacity(this.backdropOpacity)
           .onClick(() => {
             this.onClose();
@@ -58,7 +58,7 @@ export struct ObservationModal {
         }
         .width(560)
         .padding({ left: 32, right: 32, top: 28, bottom: 28 })
-        .backgroundColor('#0a0a1aF2')
+        .backgroundColor('#F20a0a1a')
         .borderColor('#d4b67888')
         .borderWidth(1)
         .borderRadius(14)
@@ -123,7 +123,7 @@ export struct ObservationModal {
         }
         .width('100%')
         .padding({ left: 18, right: 18, top: 16, bottom: 16 })
-        .backgroundColor('#12122aF0')
+        .backgroundColor('#F012122a')
         .borderColor('#d4b67877')
         .borderWidth(1)
         .borderRadius(8)
@@ -159,7 +159,7 @@ export struct ObservationModal {
           Button('关闭', { type: ButtonType.Capsule })
             .fontSize(14)
             .height(40)
-            .backgroundColor('#1a1a2eE6')
+            .backgroundColor('#E61a1a2e')
             .fontColor('#d4b678')
             .borderColor('#d4b67855')
             .borderWidth(1)
@@ -187,7 +187,7 @@ export struct ObservationModal {
         Button('离开', { type: ButtonType.Capsule })
           .fontSize(14)
           .height(40)
-          .backgroundColor('#1a1a2eE6')
+          .backgroundColor('#E61a1a2e')
           .fontColor('#d4b678')
           .borderColor('#d4b67855')
           .borderWidth(1)
