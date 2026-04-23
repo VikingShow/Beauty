@@ -4,10 +4,17 @@ import { Exhibit, findExhibit } from '../scenes/Exhibits';
  * 展品介绍卡：顶部居中显示，走近触发、离开淡出。
  * 使用 @Prop exhibitId 驱动，空串表示隐藏。
  * 内部缓存"上一次非空展品"的字段，保证淡出过程中文字不会瞬间清空。
+ *
+ * clueState:
+ *   'none'      - 这幅画没有线索，按钮显示为中性"🔍 端详"
+ *   'available' - 有线索未收集，按钮金色高亮"🔍 深入观察"
+ *   'collected' - 线索已收集，按钮暗金"✓ 已观察"
  */
 @Component
 export struct ExhibitCard {
   @Prop @Watch('onIdChange') exhibitId: string = '';
+  @Prop clueState: string = 'none';
+  onObserve: () => void = () => {};
 
   // 显示层状态：缓存上一次展品的全部字段，淡出时文字不消失
   @State private titleZh: string = '';
@@ -109,9 +116,28 @@ export struct ExhibitCard {
             .fontColor('#e8e4d6')
             .lineHeight(22)
             .margin({ top: 6 })
+
+          // 观察按钮：根据 clueState 区分三态
+          Row() {
+            Button(this.observeLabel(), { type: ButtonType.Capsule })
+              .enabled(this.clueState !== 'collected')
+              .fontSize(13)
+              .height(34)
+              .backgroundColor(this.observeBg())
+              .fontColor(this.observeFg())
+              .borderColor(this.observeBorder())
+              .borderWidth(1)
+              .padding({ left: 20, right: 20 })
+              .onClick(() => {
+                this.onObserve();
+              })
+          }
+          .width('100%')
+          .justifyContent(FlexAlign.Center)
+          .margin({ top: 10 })
         }
         .width(520)
-        .padding({ left: 20, right: 20, top: 14, bottom: 16 })
+        .padding({ left: 20, right: 20, top: 14, bottom: 14 })
         .backgroundColor('#1a1a2eEE')
         .borderColor('#d4b678')
         .borderWidth(1)
@@ -122,5 +148,28 @@ export struct ExhibitCard {
     .width('100%')
     .opacity(this.cardOpacity)
     .hitTestBehavior(HitTestMode.Transparent)
+  }
+
+  private observeLabel(): string {
+    if (this.clueState === 'collected') return '✓ 已观察';
+    if (this.clueState === 'available') return '🔍 深入观察';
+    return '🔍 端详';
+  }
+
+  private observeBg(): string {
+    if (this.clueState === 'available') return '#d4b678';
+    return '#1a1a2e';
+  }
+
+  private observeFg(): string {
+    if (this.clueState === 'available') return '#0a0a1a';
+    if (this.clueState === 'collected') return '#b9a57a';
+    return '#d4b678';
+  }
+
+  private observeBorder(): string {
+    if (this.clueState === 'available') return '#d4b678';
+    if (this.clueState === 'collected') return '#b9a57a88';
+    return '#d4b67866';
   }
 }
