@@ -17,6 +17,7 @@ import { Minimap } from '../components/Minimap';
 import { Joystick } from '../components/Joystick';
 import { ExhibitCard } from '../components/ExhibitCard';
 import { ObservationModal } from '../components/ObservationModal';
+import { NotebookModal } from '../components/NotebookModal';
 
 const DOMAIN = 0x0102;
 
@@ -53,6 +54,7 @@ struct DavidScene {
   @State private modalVisible: boolean = false;
   @State private modalExhibitId: string = '';
   @State private modalAlreadyCollected: boolean = false;
+  @State private notebookVisible: boolean = false;
   // 开场"午夜钟声"覆盖层
   @State private introVisible: boolean = false;
   @State private introOpacity: number = 0;
@@ -238,6 +240,16 @@ struct DavidScene {
     this.modalVisible = false;
   }
 
+  private openNotebook(): void {
+    // 打开笔记本时关闭观察模态，避免叠层
+    this.modalVisible = false;
+    this.notebookVisible = true;
+  }
+
+  private closeNotebook(): void {
+    this.notebookVisible = false;
+  }
+
   build() {
     Stack() {
       Column()
@@ -325,7 +337,7 @@ struct DavidScene {
         .position({ x: '50%', y: 70 })
         .markAnchor({ x: 260, y: 0 })
 
-      // 右侧 · 线索计数器
+      // 右侧 · 线索计数器（可点开笔记本）
       Row({ space: 8 }) {
         Image($r('app.media.icon_book'))
           .width(16)
@@ -338,11 +350,14 @@ struct DavidScene {
       }
       .padding({ left: 14, right: 14, top: 7, bottom: 7 })
       .backgroundColor('#E61a1a2e')
-      .borderColor('#d4b67888')
+      .borderColor('#88d4b678')
       .borderWidth(1)
       .borderRadius(18)
       .position({ x: '100%', y: 188 })
       .markAnchor({ x: 82, y: 0 })
+      .onClick(() => {
+        this.openNotebook();
+      })
 
       // 底部航点切换条
       Row({ space: 12 }) {
@@ -434,7 +449,7 @@ struct DavidScene {
         .hitTestBehavior(HitTestMode.Transparent)
       }
 
-      // 观察模态：最顶层
+      // 观察模态
       ObservationModal({
         visible: this.modalVisible,
         exhibitId: this.modalExhibitId,
@@ -444,6 +459,15 @@ struct DavidScene {
         },
         onCollect: (clueId: string) => {
           this.collectClue(clueId);
+        }
+      })
+
+      // 侦探笔记模态：最顶层
+      NotebookModal({
+        visible: this.notebookVisible,
+        discoveredClueIds: this.discoveredClueIds,
+        onClose: () => {
+          this.closeNotebook();
         }
       })
     }

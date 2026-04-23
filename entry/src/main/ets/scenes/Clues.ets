@@ -1,9 +1,14 @@
+import { DAVID_EXHIBITS, Exhibit } from './Exhibits';
+
 /**
  * 根特悬案 · 线索数据
  *
  * 1934 年 Van Eyck《根特祭坛画 · 公正法官》被窃，至今未寻回。
  * 传说原作被藏于本馆某幅画板的背后。6 条线索散布在其他画作中，
  * 集齐即可唯一锁定宿主画（Fra Angelico《基督下十字架》· 1432）。
+ *
+ * 每条 clue 的 `excludes` 字段列出被该线索排除的画作 id，
+ * 用于 3B 笔记本中的自动筛选（已集线索 → 剩余候选）。
  */
 
 export interface Clue {
@@ -12,6 +17,8 @@ export interface Clue {
   orderLabel: string;      // '第一声低语' / '第二声低语' ...
   detailText: string;      // 观察模态里的"发现"叙述
   whisper: string;         // 线索本体（画中人的一句窃语）
+  criterion: string;       // 笔记本里给玩家看的"此线索代表什么筛选条件"
+  excludes: string[];      // 该线索排除的画作 id 列表
 }
 
 export const TARGET_EXHIBIT_ID: string = 'fra_angelico_deposition';
@@ -24,6 +31,16 @@ export const DAVID_CLUES: Clue[] = [
     orderLabel: '第一声低语',
     detailText: '午夜钟声将酒杯的倒影震出一丝涟漪，杯底浮现一行极细的字。',
     whisper: '我的年岁，比这桌上的晚餐年长六十余载。',
+    criterion: '宿主画完成于 1435 年以前',
+    // 保留：masaccio_trinity(1425–28), fra_angelico_deposition(1432)
+    excludes: [
+      'leonardo_last_supper', 'mona_lisa', 'virgin_of_the_rocks',
+      'birth_of_venus', 'botticelli_primavera', 'venus_of_urbino',
+      'mantegna_triumphs', 'uccello_san_romano',
+      'school_of_athens', 'creation_of_adam', 'raphael_sistine_madonna',
+      'michelangelo_last_judgment', 'bellini_resurrection',
+      'piero_baptism', 'giorgione_tempest', 'antonello_portrait',
+    ],
   },
   {
     id: 'clue_facing',
@@ -31,6 +48,15 @@ export const DAVID_CLUES: Clue[] = [
     orderLabel: '第二声低语',
     detailText: '基督复活的晨光里，你仿佛听见一缕低微的呼吸。',
     whisper: '我面朝晨光升起的方向。',
+    criterion: '画面朝东（+X）',
+    // 保留：virgin_of_the_rocks, masaccio_trinity, fra_angelico_deposition,
+    //       michelangelo_last_judgment, bellini_resurrection, piero_baptism
+    excludes: [
+      'leonardo_last_supper', 'mona_lisa', 'birth_of_venus',
+      'botticelli_primavera', 'venus_of_urbino', 'mantegna_triumphs',
+      'uccello_san_romano', 'school_of_athens', 'creation_of_adam',
+      'raphael_sistine_madonna', 'giorgione_tempest', 'antonello_portrait',
+    ],
   },
   {
     id: 'clue_mother',
@@ -38,6 +64,16 @@ export const DAVID_CLUES: Clue[] = [
     orderLabel: '第三声低语',
     detailText: '圣母怀中的圣婴忽然望向你，嘴角微微一动。',
     whisper: '我的宿主画中，也有一位母亲的眼泪。',
+    criterion: '画中绘有圣母',
+    // 保留：virgin_of_the_rocks, masaccio_trinity,
+    //       fra_angelico_deposition, raphael_sistine_madonna
+    excludes: [
+      'leonardo_last_supper', 'mona_lisa', 'birth_of_venus',
+      'botticelli_primavera', 'venus_of_urbino', 'mantegna_triumphs',
+      'uccello_san_romano', 'school_of_athens', 'creation_of_adam',
+      'michelangelo_last_judgment', 'bellini_resurrection',
+      'piero_baptism', 'giorgione_tempest', 'antonello_portrait',
+    ],
   },
   {
     id: 'clue_panel',
@@ -45,6 +81,14 @@ export const DAVID_CLUES: Clue[] = [
     orderLabel: '第四声低语',
     detailText: '凹陷的礼拜堂墙壁深处，传来一声木板的轻叩。',
     whisper: '我非壁画——我栖身于木板之上。',
+    criterion: '载体为木板（而非壁画）',
+    // 排除壁画：leonardo_last_supper(tempera on plaster), masaccio_trinity,
+    //          school_of_athens, creation_of_adam, michelangelo_last_judgment
+    excludes: [
+      'leonardo_last_supper', 'masaccio_trinity',
+      'school_of_athens', 'creation_of_adam',
+      'michelangelo_last_judgment',
+    ],
   },
   {
     id: 'clue_nude',
@@ -52,6 +96,16 @@ export const DAVID_CLUES: Clue[] = [
     orderLabel: '第五声低语',
     detailText: '维纳斯在床榻上望向你，轻声说出一句不属于她的话。',
     whisper: '我的宿主画家，此生从未绘过一具裸体。',
+    criterion: '画家从未绘过裸体',
+    // 保留：fra_angelico_deposition, piero_baptism, antonello_portrait
+    excludes: [
+      'leonardo_last_supper', 'mona_lisa', 'virgin_of_the_rocks',
+      'masaccio_trinity', 'birth_of_venus', 'botticelli_primavera',
+      'venus_of_urbino', 'mantegna_triumphs', 'uccello_san_romano',
+      'school_of_athens', 'creation_of_adam', 'raphael_sistine_madonna',
+      'michelangelo_last_judgment', 'bellini_resurrection',
+      'giorgione_tempest',
+    ],
   },
   {
     id: 'clue_friar',
@@ -59,6 +113,16 @@ export const DAVID_CLUES: Clue[] = [
     orderLabel: '第六声低语',
     detailText: '哲学家的长袍随风微动，一道身影从廊柱之后静静现身。',
     whisper: '我的宿主画家，身披黑白修道服。',
+    criterion: '画家是多明我会修士',
+    // 保留：fra_angelico_deposition（唯一多明我会画家）
+    excludes: [
+      'leonardo_last_supper', 'mona_lisa', 'virgin_of_the_rocks',
+      'masaccio_trinity', 'birth_of_venus', 'botticelli_primavera',
+      'venus_of_urbino', 'mantegna_triumphs', 'uccello_san_romano',
+      'school_of_athens', 'creation_of_adam', 'raphael_sistine_madonna',
+      'michelangelo_last_judgment', 'bellini_resurrection',
+      'piero_baptism', 'giorgione_tempest', 'antonello_portrait',
+    ],
   },
 ];
 
@@ -84,4 +148,38 @@ export function isCollected(clueId: string, collected: string[]): boolean {
     if (id === clueId) return true;
   }
   return false;
+}
+
+function containsId(arr: string[], id: string): boolean {
+  for (const x of arr) {
+    if (x === id) return true;
+  }
+  return false;
+}
+
+/**
+ * 根据已收集的线索计算剩余候选画作 id。
+ * 没收集任何线索时返回全部 18 幅画；
+ * 集齐 6 条时剩 fra_angelico_deposition 唯一候选。
+ */
+export function candidateExhibitIds(collectedClueIds: string[]): string[] {
+  const excluded: string[] = [];
+  for (const clueId of collectedClueIds) {
+    const c: Clue | undefined = findClueById(clueId);
+    if (c === undefined) continue;
+    for (const id of c.excludes) {
+      if (!containsId(excluded, id)) excluded.push(id);
+    }
+  }
+  const result: string[] = [];
+  for (const e of DAVID_EXHIBITS) {
+    if (!containsId(excluded, e.id)) result.push(e.id);
+  }
+  return result;
+}
+
+/** 某画是否仍是候选（未被任何已集线索排除）。 */
+export function isCandidate(exhibitId: string, collectedClueIds: string[]): boolean {
+  const ids: string[] = candidateExhibitIds(collectedClueIds);
+  return containsId(ids, exhibitId);
 }
