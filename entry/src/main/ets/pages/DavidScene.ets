@@ -326,16 +326,18 @@ struct DavidScene {
         .markAnchor({ x: 260, y: 0 })
 
       // 右侧 · 线索计数器
-      Row({ space: 6 }) {
-        Text('📖')
-          .fontSize(14)
+      Row({ space: 8 }) {
+        Image($r('app.media.icon_book'))
+          .width(16)
+          .height(16)
+          .fillColor('#d4b678')
         Text(`${this.discoveredClueIds.length} / ${TOTAL_CLUE_COUNT}`)
           .fontSize(14)
           .fontColor('#d4b678')
           .fontWeight(FontWeight.Medium)
       }
-      .padding({ left: 12, right: 12, top: 6, bottom: 6 })
-      .backgroundColor('#1a1a2eCC')
+      .padding({ left: 14, right: 14, top: 7, bottom: 7 })
+      .backgroundColor('#1a1a2eE6')
       .borderColor('#d4b67888')
       .borderWidth(1)
       .borderRadius(18)
@@ -406,15 +408,17 @@ struct DavidScene {
       // 开场 · 午夜钟声独白（一次性，不阻挡操作）
       if (this.introVisible) {
         Column({ space: 14 }) {
-          Text('🕛')
-            .fontSize(36)
-            .fontColor('#d4b678')
+          Image($r('app.media.icon_clock'))
+            .width(44)
+            .height(44)
+            .fillColor('#d4b678')
 
           Text('午 夜 钟 声')
             .fontSize(22)
             .fontColor('#f5e6c8')
             .letterSpacing(10)
             .fontWeight(FontWeight.Bold)
+            .margin({ top: 6 })
 
           Text('画中之物，开始低语。')
             .fontSize(14)

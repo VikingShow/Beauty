@@ -2,7 +2,7 @@ import { Exhibit, findExhibit } from '../scenes/Exhibits';
 import { Clue, clueForExhibit } from '../scenes/Clues';
 
 /**
- * 观察模态：点击 ExhibitCard 的"🔍 深入观察"触发。
+ * 观察模态：点击 ExhibitCard 的"深入观察"按钮触发。
  * - 有线索且未收集：展示发现叙述 + 窃语 + "收入笔记"按钮
  * - 有线索已收集：展示同样内容 + "已收入笔记"（禁用）
  * - 无线索：展示"此画今夜静默如常"
@@ -46,7 +46,7 @@ export struct ObservationModal {
         Column()
           .width('100%')
           .height('100%')
-          .backgroundColor('#000000D8')
+          .backgroundColor('#000000E0')
           .opacity(this.backdropOpacity)
           .onClick(() => {
             this.onClose();
@@ -95,10 +95,16 @@ export struct ObservationModal {
 
       // 正文：有线索 / 无线索 分支
       if (this.hasClue()) {
-        Text('🕯  ' + this.getOrderLabel())
-          .fontSize(13)
-          .fontColor('#b9a57a')
-          .letterSpacing(4)
+        Row({ space: 8 }) {
+          Image($r('app.media.icon_flame'))
+            .width(16)
+            .height(16)
+            .fillColor('#b9a57a')
+          Text(this.getOrderLabel())
+            .fontSize(13)
+            .fontColor('#b9a57a')
+            .letterSpacing(4)
+        }
 
         Text(this.getDetailText())
           .fontSize(14)
@@ -117,34 +123,43 @@ export struct ObservationModal {
         }
         .width('100%')
         .padding({ left: 18, right: 18, top: 16, bottom: 16 })
-        .backgroundColor('#1a1a2eAA')
-        .borderColor('#d4b67855')
+        .backgroundColor('#12122aF0')
+        .borderColor('#d4b67877')
         .borderWidth(1)
         .borderRadius(8)
         .margin({ top: 4, bottom: 4 })
 
         // 按钮组
         Row({ space: 16 }) {
-          Button(this.alreadyCollected ? '✓ 已收入笔记' : '收入笔记', { type: ButtonType.Capsule })
-            .enabled(!this.alreadyCollected)
-            .fontSize(14)
-            .height(40)
-            .backgroundColor(this.alreadyCollected ? '#1a1a2e' : '#d4b678')
-            .fontColor(this.alreadyCollected ? '#8a8a9a' : '#0a0a1a')
-            .borderColor('#d4b678')
-            .borderWidth(1)
-            .padding({ left: 24, right: 24 })
-            .onClick(() => {
-              const c: Clue | undefined = clueForExhibit(this.exhibitId);
-              if (c !== undefined && !this.alreadyCollected) {
-                this.onCollect(c.id);
+          Button({ type: ButtonType.Capsule }) {
+            Row({ space: 6 }) {
+              if (this.alreadyCollected) {
+                Image($r('app.media.icon_check'))
+                  .width(14).height(14)
+                  .fillColor('#8a8a9a')
               }
-            })
+              Text(this.alreadyCollected ? '已收入笔记' : '收入笔记')
+                .fontSize(14)
+                .fontColor(this.alreadyCollected ? '#8a8a9a' : '#0a0a1a')
+            }
+            .padding({ left: 22, right: 22, top: 4, bottom: 4 })
+          }
+          .enabled(!this.alreadyCollected)
+          .height(40)
+          .backgroundColor(this.alreadyCollected ? '#1a1a2e' : '#d4b678')
+          .borderColor('#d4b678')
+          .borderWidth(1)
+          .onClick(() => {
+            const c: Clue | undefined = clueForExhibit(this.exhibitId);
+            if (c !== undefined && !this.alreadyCollected) {
+              this.onCollect(c.id);
+            }
+          })
 
           Button('关闭', { type: ButtonType.Capsule })
             .fontSize(14)
             .height(40)
-            .backgroundColor('#1a1a2e99')
+            .backgroundColor('#1a1a2eE6')
             .fontColor('#d4b678')
             .borderColor('#d4b67855')
             .borderWidth(1)
@@ -172,7 +187,7 @@ export struct ObservationModal {
         Button('离开', { type: ButtonType.Capsule })
           .fontSize(14)
           .height(40)
-          .backgroundColor('#1a1a2e99')
+          .backgroundColor('#1a1a2eE6')
           .fontColor('#d4b678')
           .borderColor('#d4b67855')
           .borderWidth(1)
