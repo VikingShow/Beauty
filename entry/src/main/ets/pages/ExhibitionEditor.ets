@@ -201,9 +201,9 @@ struct ExhibitionEditor {
 
   private async rebuildSceneInSandbox(): Promise<void> {
     try {
+      hilog.info(DOMAIN, 'Editor', 'rebuild: START');
       const context = getContext(this);
 
-      // Register sandbox protocol on first use
       if (!this.sandboxRegistered) {
         const rc = Scene.getDefaultRenderContext();
         if (rc !== undefined && rc !== null) {
@@ -213,9 +213,9 @@ struct ExhibitionEditor {
         }
       }
 
-      // Read base glTF as text
       const basePath: string = this.currentSceneId === 'salon_carre'
         ? 'gltf/salon_carre/scene.gltf' : 'gltf/white_cube/scene.gltf';
+      hilog.info(DOMAIN, 'Editor', 'rebuild: reading rawfile %{public}s', basePath);
       const rm = context.resourceManager;
       const rawFd = rm.getRawFdSync(basePath);
       const fd: number = rawFd.fd;
@@ -225,20 +225,26 @@ struct ExhibitionEditor {
       fileIo.closeSync(fd);
       const rawText = this.bytesToString(rawBytes);
       const gltf: GltfRoot = JSON.parse(rawText) as GltfRoot;
+      hilog.info(DOMAIN, 'Editor', 'rebuild: glTF parsed, buffers=%{public}d', gltf.buffers.length);
 
-      // Decode base64 buffer
       const buf0: GltfBuffer = gltf.buffers[0];
       const b64: string = buf0.uri.replace('data:application/octet-stream;base64,', '');
       const binBytes: Uint8Array = this.base64Decode(b64);
       const binLen: number = binBytes.length;
+      hilog.info(DOMAIN, 'Editor', 'rebuild: base64 decoded, binLen=%{public}d', binLen);
 
       // Generate painting quads
       const paintings = this.placements.filter(p => p.worldX !== undefined);
       const quadCount: number = paintings.length;
+      hilog.info(DOMAIN, 'Editor', 'rebuild: quadCount=%{public}d, placements=%{public}d',
+        quadCount, this.placements.length);
       const totalNewVerts: number = quadCount * 4;
       const totalNewIndices: number = quadCount * 6;
 
-      if (quadCount === 0) return;  // nothing to add
+      if (quadCount === 0) {
+        hilog.info(DOMAIN, 'Editor', 'rebuild: no quads to add, skipping');
+        return;
+      }
 
       const posData = new Float32Array(totalNewVerts * 3);
       const normData = new Float32Array(totalNewVerts * 3);
@@ -349,14 +355,16 @@ struct ExhibitionEditor {
 
       const protocol: string = this.sandboxRegistered ? 'sandbox://' : '';
       this.sandboxScenePath = protocol + 'scene_modified.gltf';
-      hilog.info(DOMAIN, 'Editor', 'Scene rebuilt with %{public}d quads, file size: %{public}d',
-        quadCount, jsonStr.length);
+      hilog.info(DOMAIN, 'Editor', 'rebuild: written %{public}d bytes, path=%{public}s, now reloading',
+        jsonStr.length, sandboxPath);
 
       await this.loadScene(true);  // keep placements for future rebuilds
+      hilog.info(DOMAIN, 'Editor', 'rebuild: DONE reload');
     } catch (e) {
       const err: BusinessError = e as BusinessError;
-      hilog.error(DOMAIN, 'Editor', 'rebuild failed: %{public}s', JSON.stringify(e));
-      this.errorMsg = '沙箱场景重建失败: ' + (err.message ?? '');
+      hilog.error(DOMAIN, 'Editor', 'rebuild EXCEPTION: %{public}s', JSON.stringify(e));
+      hilog.error(DOMAIN, 'Editor', 'rebuild EXCEPTION message: %{public}s', err.message ?? 'no message');
+      this.errorMsg = '重建失败: ' + (err.message ?? 'unknown');
     }
   }
 
