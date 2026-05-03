@@ -9,19 +9,22 @@
   html,body { width:100%; height:100%; overflow:hidden; background:#0a0a1a; }
   #loader { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
             color:#d4b678; font:18px sans-serif; text-align:center; }
-  #error { position:absolute; top:10px; left:10px; color:#ff6b6b; font:12px monospace;
-           white-space:pre-wrap; max-width:90%; display:none; }
+  #info { position:absolute; top:10px; left:10px; color:#6a6; font:11px monospace;
+           white-space:pre-wrap; max-width:90%; }
 </style>
 </head>
 <body>
-<div id="loader">Loading Three.js...</div>
-<div id="error"></div>
+<div id="loader">Loading...</div>
+<div id="info"></div>
+
+<!-- GLTF data (embedded textures, sets window.GLTF_DATA) -->
+<script src="js/gltf_data.js"></script>
 
 <script type="importmap">
 {
   "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    "three": "./js/three.module.js",
+    "three/addons/loaders/GLTFLoader.js": "./js/GLTFLoader.js"
   }
 }
 </script>
@@ -31,46 +34,26 @@
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
   const loaderEl = document.getElementById('loader');
-  const errorEl = document.getElementById('error');
-  function log(msg) { errorEl.style.display='block'; errorEl.textContent += msg + '\n'; }
+  const infoEl = document.getElementById('info');
+  function info(msg) { infoEl.textContent += msg + '\n'; }
 
-  loaderEl.textContent = 'Three.js loaded. Loading scene...';
+  // Use embedded glTF data (set by gltf_data.js)
+  loaderEl.textContent = 'Parsing glTF...';
+  const gltfData = window.GLTF_DATA;
+  info('glTF: ' + (JSON.stringify(gltfData).length / 1024).toFixed(0) + 'KB');
 
-  // Use XMLHttpRequest to load glTF (onInterceptRequest intercepts XHR, fetch might not work)
-  function loadFile(url, callback) {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.responseType = 'arraybuffer';
-    xhr.onload = function() {
-      if (xhr.status === 200 || xhr.status === 0) {
-        callback(null, new Uint8Array(xhr.response));
-      } else {
-        callback(new Error('HTTP ' + xhr.status));
-      }
-    };
-    xhr.onerror = function() { callback(new Error('XHR error')); };
-    xhr.send();
-  }
-
-  // Load the embedded glTF (textures are base64 data URIs inside the JSON)
-  loadFile('http://rawfile.local/gltf/white_cube/scene_embedded.gltf', function(err, data) {
-    if (err) { loaderEl.textContent = 'XHR failed'; log('XHR error: '+err.message); return; }
-    loaderEl.textContent = 'Parsing glTF... (' + (data.length/1024).toFixed(0) + 'KB)';
-
-    const text = new TextDecoder().decode(data);
-    const gltfJson = JSON.parse(text);
-
-    const loader = new GLTFLoader();
-    loader.parse(gltfJson, '', function(gltf) {
-      loaderEl.style.display = 'none';
-      initScene(gltf.scene);
-    }, function(e) {
-      loaderEl.textContent = 'Parse failed';
-      log('GLTF parse: ' + (e.message || e));
-    });
+  const loader = new GLTFLoader();
+  loader.parse(JSON.stringify(gltfData), '', function(gltf) {
+    loaderEl.style.display = 'none';
+    initScene(gltf.scene);
+  }, function(e) {
+    loaderEl.textContent = 'Parse failed';
+    info('Error: ' + (e.message || e));
   });
 
   function initScene(loadedScene) {
+    info('Scene loaded!');
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0a1a);
 
@@ -80,20 +63,17 @@
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
 
-    // Lights (matching original ArkGraphics3D setup)
-    const amb = new THREE.AmbientLight(0xffffff, 2);
-    scene.add(amb);
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 2));
     const key = new THREE.DirectionalLight(0xfff5e6, 10);
-    key.position.set(5, 8, 0);
-    scene.add(key);
+    key.position.set(5, 8, 0); scene.add(key);
     const fill = new THREE.DirectionalLight(0xb3c7f0, 5);
-    fill.position.set(-5, 3, 5);
-    scene.add(fill);
+    fill.position.set(-5, 3, 5); scene.add(fill);
     const rim = new THREE.DirectionalLight(0xfff5e6, 4);
-    rim.position.set(0, 2, -5);
-    scene.add(rim);
+    rim.position.set(0, 2, -5); scene.add(rim);
 
     scene.add(loadedScene);
 
@@ -104,20 +84,18 @@
         slots.push({ name: node.name, pos: node.position.clone() });
       }
     });
-    log('Found ' + slots.length + ' slots');
-    slots.forEach(function(s) {
-      log('  ' + s.name + ' @ (' + s.pos.x.toFixed(1) + ',' + s.pos.y.toFixed(1) + ',' + s.pos.z.toFixed(1) + ')');
-    });
+    info('Slots: ' + slots.length);
+    for (let i = 0; i < slots.length; i++) {
+      info('  ' + slots[i].name);
+    }
 
     // FPS camera
     const state = { yaw:0, pitch:0, moveX:0, moveY:0, keys:{} };
 
     function animate() {
       requestAnimationFrame(animate);
-      const yaw = state.yaw;
-      const pitch = Math.max(-1.5, Math.min(1.5, state.pitch));
-      const cp = Math.cos(pitch);
-      const sp = Math.sin(pitch);
+      const yaw = state.yaw, pitch = Math.max(-1.5, Math.min(1.5, state.pitch));
+      const cp = Math.cos(pitch), sp = Math.sin(pitch);
       if (state.moveY !== 0 || state.moveX !== 0) {
         camera.position.x += (-Math.sin(yaw)*state.moveY*0.05 + Math.cos(yaw)*state.moveX*0.04);
         camera.position.z += (-Math.cos(yaw)*state.moveY*0.05 - Math.sin(yaw)*state.moveX*0.04);
@@ -130,26 +108,26 @@
     animate();
 
     // Touch look
-    let dragging = false, lx = 0, ly = 0;
-    renderer.domElement.addEventListener('pointerdown', function(e) { dragging=true; lx=e.clientX; ly=e.clientY; });
-    window.addEventListener('pointerup', function() { dragging=false; });
-    window.addEventListener('pointermove', function(e) {
-      if (!dragging) return;
-      state.yaw -= (e.clientX - lx) * 0.004;
-      state.pitch -= (e.clientY - ly) * 0.004;
-      lx = e.clientX; ly = e.clientY;
+    let dragging=false, lx=0, ly=0;
+    renderer.domElement.addEventListener('pointerdown', function(e){dragging=true;lx=e.clientX;ly=e.clientY;});
+    window.addEventListener('pointerup', function(){dragging=false;});
+    window.addEventListener('pointermove', function(e){
+      if(!dragging)return;
+      state.yaw-=(e.clientX-lx)*0.004;
+      state.pitch-=(e.clientY-ly)*0.004;
+      lx=e.clientX;ly=e.clientY;
     });
 
     // Keyboard
-    window.addEventListener('keydown', function(e) { state.keys[e.key]=true; });
-    window.addEventListener('keyup', function(e) { state.keys[e.key]=false; });
-    setInterval(function() {
-      state.moveX = 0; state.moveY = 0;
-      if (state.keys['w']||state.keys['ArrowUp']) state.moveY = 1;
-      if (state.keys['s']||state.keys['ArrowDown']) state.moveY = -1;
-      if (state.keys['a']||state.keys['ArrowLeft']) state.moveX = -1;
-      if (state.keys['d']||state.keys['ArrowRight']) state.moveX = 1;
-    }, 16);
+    window.addEventListener('keydown', function(e){state.keys[e.key]=true;});
+    window.addEventListener('keyup', function(e){state.keys[e.key]=false;});
+    setInterval(function(){
+      state.moveX=0;state.moveY=0;
+      if(state.keys['w']||state.keys['ArrowUp'])state.moveY=1;
+      if(state.keys['s']||state.keys['ArrowDown'])state.moveY=-1;
+      if(state.keys['a']||state.keys['ArrowLeft'])state.moveX=-1;
+      if(state.keys['d']||state.keys['ArrowRight'])state.moveX=1;
+    },16);
   }
 </script>
 </body>
