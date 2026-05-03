@@ -339,17 +339,16 @@ struct ExhibitionEditor {
 
   private getAllArtworks(): ArtworkEntry[] { return PRESET_ARTWORKS.concat(this.userArtworks); }
 
-  // Predefined colors for artwork visual distinction in hotbar (like Minecraft item sprites)
-  private artworkColor(id: string): string {
-    if (id === 'mona_lisa') return '#8B7355';
-    if (id === 'starry_night') return '#1a3a5c';
-    if (id === 'birth_of_venus') return '#3a6b7c';
-    if (id === 'school_of_athens') return '#8B5E3C';
-    if (id === 'creation_of_adam') return '#C4956A';
-    if (id === 'primavera') return '#4a6b3a';
-    // uploaded artworks
-    if (id.startsWith('u_') || id.startsWith('user_')) return '#5a5a7a';
-    return '#4a4a5a';
+  // Map artwork IDs to actual rawfile thumbnails
+  private artworkImage(id: string): Resource {
+    if (id === 'mona_lisa') return $rawfile('gltf/David/paintings/mona_lisa.jpg');
+    if (id === 'birth_of_venus') return $rawfile('gltf/David/paintings/birth_of_venus.jpg');
+    if (id === 'school_of_athens') return $rawfile('gltf/David/paintings/school_of_athens.jpg');
+    if (id === 'creation_of_adam') return $rawfile('gltf/David/paintings/creation_of_adam.jpg');
+    if (id === 'primavera') return $rawfile('gltf/David/paintings/botticelli_primavera.jpg');
+    if (id === 'starry_night') return $rawfile('gltf/David/paintings/birth_of_venus.jpg');
+    // Default fallback
+    return $rawfile('gltf/David/paintings/mona_lisa.jpg');
   }
 
   private getSceneName(): string {
@@ -522,17 +521,15 @@ struct ExhibitionEditor {
 
           ForEach(this.getAllArtworks(), (art: ArtworkEntry) => {
             Column({ space: 2 }) {
-              // Color swatch (artwork preview)
-              Row() {}
+              // Real artwork thumbnail
+              Image(this.artworkImage(art.id))
                 .width(44).height(30)
-                .backgroundColor(this.artworkColor(art.id))
+                .objectFit(ImageFit.Cover)
                 .borderRadius(4)
-              // Selected indicator border
-              .border({
-                width: this.selectedArtworkId === art.id ? 2 : 0,
-                color: '#d4b678'
-              })
-              // Title
+                .border({
+                  width: this.selectedArtworkId === art.id ? 2 : 0,
+                  color: '#d4b678'
+                })
               Text(
                 art.titleZh.length > 3
                   ? art.titleZh.substring(0, 3)
@@ -580,14 +577,18 @@ struct ExhibitionEditor {
 
   @Builder
   buildPlacedOverlays() {
-    ForEach(this.cachedOverlays, (r: GhostRect, i: number) => {
+    ForEach(this.placements, (p: Placement, i: number) => {
       Column()
-        .width(r.w).height(r.h)
-        .backgroundColor('#10d4b678')
-        .border({ width: 1.5, color: '#77d4b678' })
-        .position({ x: r.x, y: r.y })
+        .width(this.cachedOverlays[i]?.w ?? 0)
+        .height(this.cachedOverlays[i]?.h ?? 0)
+        .backgroundColor('#10000000')
+        .border({ width: 2, color: '#88d4b678' })
+        .position({
+          x: this.cachedOverlays[i]?.x ?? 0,
+          y: this.cachedOverlays[i]?.y ?? 0
+        })
         .hitTestBehavior(HitTestMode.Transparent)
-    }, (r: GhostRect, i: number) => i.toString())
+    }, (p: Placement, i: number) => i.toString())
   }
 
   @Builder
