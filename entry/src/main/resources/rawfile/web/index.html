@@ -144,8 +144,30 @@ function processJoy(){
   joyMove.fwd=-normY*eased*3.0;joyMove.str=normX*eased*2.0;
 }
 
-// Load
-new GLTFLoader().parse(JSON.stringify(window.GLTF_DATA),'',function(gltf){scene.add(gltf.scene);start()});
+// Texture preload
+const texCache={};let slots3D=[];
+ARTWORKS.forEach(function(a){
+  const src=thumb(a.id);if(!src)return;
+  const img=new Image;img.src=src;img.onload=function(){
+    const tex=new THREE.Texture(img);tex.needsUpdate=true;tex.colorSpace=THREE.SRGBColorSpace;
+    tex.wrapS=THREE.ClampToEdgeWrapping;tex.wrapT=THREE.ClampToEdgeWrapping;
+    tex.minFilter=THREE.LinearFilter;tex.magFilter=THREE.LinearFilter;
+    texCache[a.id]=tex;
+  };
+});
+
+// Load glTF + find slot nodes
+new GLTFLoader().parse(JSON.stringify(window.GLTF_DATA),'',function(gltf){
+  scene.add(gltf.scene);
+  gltf.scene.traverse(function(n){
+    if(n.name&&n.name.startsWith('Slot_Painting_')){
+      const wp=new THREE.Vector3;n.getWorldPosition(wp);
+      slots3D.push({name:n.name,pos:wp.clone(),w:1.2,h:0.9});
+    }
+  });
+  log('Slots found: '+slots3D.length);
+  start();
+});
 
 function start(){
   // Hotbar
@@ -161,10 +183,22 @@ function start(){
   function updateUI(){document.getElementById('cross').style.display=placement?'block':'none';document.getElementById('place').style.display=placement&&ghost.visible?'block':'none'}
   document.getElementById('place').onclick=function(){
     if(!placement||!ghost.visible||!selectedArt)return;
-    const geo=new THREE.PlaneGeometry(1.2,0.9);
-    const mat=new THREE.MeshStandardMaterial({color:0xd4b678,roughness:0.4,side:THREE.DoubleSide});
-    const q=new THREE.Mesh(geo,mat);q.position.copy(ghost.position);q.quaternion.copy(ghost.quaternion);
-    q.userData={id:selectedArt.id,title:selectedArt.title};scene.add(q);artworks.push(q);playPlace();log('Placed: '+selectedArt.title+' ('+artworks.length+')')};
+
+    // Use slot dimensions for aspect ratio; default 1.2×0.9
+    const w=ghost.userData?.w||1.2, h=ghost.userData?.h||0.9;
+
+    const geo=new THREE.PlaneGeometry(w,h);
+    let mat;
+    const tex=texCache[selectedArt.id];
+    if(tex){
+      mat=new THREE.MeshStandardMaterial({map:tex,roughness:0.4,side:THREE.DoubleSide});
+    }else{
+      mat=new THREE.MeshStandardMaterial({color:0xd4b678,roughness:0.4,side:THREE.DoubleSide});
+    }
+    const q=new THREE.Mesh(geo,mat);
+    q.position.copy(ghost.position);q.quaternion.copy(ghost.quaternion);
+    q.userData={id:selectedArt.id,title:selectedArt.title};
+    scene.add(q);artworks.push(q);playPlace();log('Placed: '+selectedArt.title+' ('+artworks.length+')')};
 
   // Game loop
   const BOUNDS={xMin:-6.8,xMax:6.8,zMin:-4.3,zMax:4.3};
@@ -212,20 +246,46 @@ function start(){
     cam.lookAt(cam.position.x+sinY*cp,cam.position.y-sp,cam.position.z-cosY*cp);
     cam.position.x-=bobX;cam.position.y=1.65;
 
-    // Raycaster ghost
+    // Raycaster ghost + slot snapping
     if(placement){
-      const dir=cam.getWorldDirection(new THREE.Vector3);let best=null,bestD=5;
-      WALLS.forEach(function(w){
-        const d=dir.x*w.n[0]+dir.y*w.n[1]+dir.z*w.n[2];if(d>=-0.001)return;
-        const t=((w.p[0]-cam.position.x)*w.n[0]+(w.p[1]-cam.position.y)*w.n[1]+(w.p[2]-cam.position.z)*w.n[2])/d;
-        if(t>0.01&&t<bestD){const hx=cam.position.x+dir.x*t,hy=cam.position.y+dir.y*t,hz=cam.position.z+dir.z*t;
-          if(hy<0.5||hy>4.5)return;const along=w.n[2]!==0?hx:hz;if(along<w.min||along>w.max)return;
-          let overlap=0;artworks.forEach(function(q){const dx=hx-q.position.x,dz=hz-q.position.z;if(dx*dx+dz*dz<0.3)overlap=1});
-          if(!overlap){best={x:hx,y:hy,z:hz,nx:w.n[0],nz:w.n[2]};bestD=t}}});
-      if(best){ghost.position.set(best.x,best.y,best.z);
-        ghost.quaternion.copy(cam.quaternion);ghost.position.x+=best.nx*0.01;ghost.position.z+=best.nz*0.01;
-        ghost.visible=true;document.getElementById('place').style.display='block'}
-      else{ghost.visible=false;document.getElementById('place').style.display='none'}}
+      const dir=cam.getWorldDirection(new THREE.Vector3);
+      // First, find nearest slot that's in view
+      let nearestSlot=null,nearestDist=2.5; // snap within 2.5m
+      const camPos=cam.position;
+      for(let i=0;i<slots3D.length;i++){
+        const s=slots3D[i];const dx=s.pos.x-camPos.x,dz=s.pos.z-camPos.z;
+        const dist=Math.sqrt(dx*dx+dz*dz);
+        if(dist<nearestDist){
+          // Check if slot is roughly in front of camera
+          const dot=dx*dir.x+dz*dir.z;
+          if(dot>0){nearestDist=dist;nearestSlot=s}
+        }
+      }
+      if(nearestSlot){
+        // Snap ghost to slot
+        const s=nearestSlot;
+        ghost.position.copy(s.pos);ghost.position.x+=0.01;ghost.position.z+=0.01;
+        ghost.lookAt(camPos.x,camPos.y,camPos.z);
+        ghost.position.x+=0.01;ghost.position.z+=0.01;
+        ghost.scale.set(s.w/1.2,s.h/0.9,1);
+        ghost.userData={w:s.w,h:s.h};
+        ghost.visible=true;document.getElementById('place').style.display='block';
+      }else{
+        // Fall back to raycast wall hit
+        let best=null,bestD=5;
+        WALLS.forEach(function(w){
+          const d=dir.x*w.n[0]+dir.y*w.n[1]+dir.z*w.n[2];if(d>=-0.001)return;
+          const t=((w.p[0]-camPos.x)*w.n[0]+(w.p[1]-camPos.y)*w.n[1]+(w.p[2]-camPos.z)*w.n[2])/d;
+          if(t>0.01&&t<bestD){const hx=camPos.x+dir.x*t,hy=camPos.y+dir.y*t,hz=camPos.z+dir.z*t;
+            if(hy<0.5||hy>4.5)return;const along=w.n[2]!==0?hx:hz;if(along<w.min||along>w.max)return;
+            let overlap=0;artworks.forEach(function(q){const dx=hx-q.position.x,dz=hz-q.position.z;if(dx*dx+dz*dz<0.3)overlap=1});
+            if(!overlap){best={x:hx,y:hy,z:hz,nx:w.n[0],nz:w.n[2]};bestD=t}}});
+        if(best){ghost.position.set(best.x,best.y,best.z);
+          ghost.quaternion.copy(cam.quaternion);ghost.position.x+=best.nx*0.01;ghost.position.z+=best.nz*0.01;
+          ghost.scale.set(1,1,1);ghost.userData={w:1.2,h:0.9};
+          ghost.visible=true;document.getElementById('place').style.display='block'}
+        else{ghost.visible=false;document.getElementById('place').style.display='none'}
+      }}
     else{ghost.visible=false;document.getElementById('place').style.display='none'}
     renderer.render(scene,cam);
   }
@@ -240,7 +300,7 @@ function start(){
   window.addEventListener('pointermove',function(e){
     if(!drag||e.pointerId!==pId)return;
     st.yaw+=(e.clientX-lx)*0.005;
-    st.pitch-=(e.clientY-ly)*0.005;
+    st.pitch+=(e.clientY-ly)*0.005;
     st.pitch=Math.max(-1.4,Math.min(1.4,st.pitch));
     lx=e.clientX;ly=e.clientY});
   window.addEventListener('keydown',function(e){st.keys[e.key]=1;initAudio()});
