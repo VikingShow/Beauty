@@ -13,7 +13,7 @@ import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { fileIo } from '@kit.CoreFileKit';
 import { OrbitCameraController } from '../controllers/OrbitCameraController';
 import { FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
-import { ParsedSlot, Placement, ArtworkEntry, PRESET_ARTWORKS, getPresetSlots, getPaintingSlots, getSculptureSlots, getSpawnSlot } from '../scenes/SlotParser';
+import { ParsedSlot, Placement, ArtworkEntry, PRESET_ARTWORKS, PRESET_SCENES, SceneEntry, getPresetSlots, getPaintingSlots, getSculptureSlots, getSpawnSlot } from '../scenes/SlotParser';
 import { Waypoint, Vec2 } from '../scenes/Waypoint';
 import { AABB2 } from '../controllers/FirstPersonCameraController';
 import { Joystick } from '../components/Joystick';
@@ -50,11 +50,13 @@ struct ExhibitionEditor {
   @State private placements: Placement[] = [];
   @State private showArtworkPicker: boolean = false;
   @State private showSlotPanel: boolean = false;
+  @State private showScenePicker: boolean = false;
   @State private loadingOpacity: number = 1;
   @State private sceneOpacity: number = 0;
   @State private userArtworks: ArtworkEntry[] = [];
   @State private uploadError: string = '';
   @State private fineTuneSlotId: string = '';
+  @State private currentSceneId: string = 'white_cube';
 
   private sceneInstance: Scene | undefined = undefined;
   private mainCamera: Camera | undefined = undefined;
@@ -63,11 +65,30 @@ struct ExhibitionEditor {
   private fpsController: FirstPersonCameraController = new FirstPersonCameraController(DEFAULT_SPAWN);
 
   async aboutToAppear(): Promise<void> {
-    this.allSlots = getPresetSlots('white_cube');
+    await this.loadCurrentScene();
+  }
+
+  private getSceneResource(): Resource {
+    if (this.currentSceneId === 'salon_carre') {
+      return $rawfile('gltf/salon_carre/scene.gltf');
+    }
+    return $rawfile('gltf/white_cube/scene.gltf');
+  }
+
+  private async loadCurrentScene(): Promise<void> {
+    this.sceneReady = false;
+    this.sceneOpacity = 0;
+    this.loadingOpacity = 1;
+    this.allSlots = getPresetSlots(this.currentSceneId);
+    this.placements = [];
+
+    // Detach old controller
+    this.orbitController.detach();
+    this.fpsController.detach();
 
     try {
-      hilog.info(DOMAIN, 'Editor', 'loading White Cube scene');
-      const scene: Scene = await Scene.load($rawfile('gltf/white_cube/scene.gltf'));
+      hilog.info(DOMAIN, 'Editor', 'loading scene: %{public}s', this.currentSceneId);
+      const scene: Scene = await Scene.load(this.getSceneResource());
       hilog.info(DOMAIN, 'Editor', 'scene loaded');
 
       const factory: SceneResourceFactory = scene.getResourceFactory();
@@ -77,22 +98,25 @@ struct ExhibitionEditor {
       cam.enabled = true;
       cam.fov = 65 * Math.PI / 180;
       cam.nearPlane = 0.1;
-      cam.farPlane = 60.0;
-      cam.clearColor = { r: 0.88, g: 0.90, b: 0.92, a: 1.0 };
+      cam.farPlane = 80.0;
+      cam.clearColor = { r: 0.15, g: 0.12, b: 0.12, a: 1.0 };
       this.mainCamera = cam;
 
+      this.orbitController = new OrbitCameraController(
+        this.currentSceneId === 'salon_carre' ? 18 : 12, 0.008, 3, 35
+      );
       this.orbitController.attach(cam);
 
-      // 灯光
+      // 灯光 —— Salon Carré 用暖暗光
       const white: RGBA = { r: 1.0, g: 1.0, b: 1.0, a: 1.0 };
-      const warm: RGBA = { r: 1.0, g: 0.98, b: 0.93, a: 1.0 };
-      const fillColor: RGBA = { r: 0.85, g: 0.88, b: 0.95, a: 1.0 };
+      const warm: RGBA = { r: 1.0, g: 0.95, b: 0.85, a: 1.0 };
+      const fillColor: RGBA = { r: 0.8, g: 0.82, b: 0.9, a: 1.0 };
 
       const topLightParams: SceneNodeParameters = { name: 'topLight' };
       const lightTop: Light = await factory.createLight(topLightParams, LightType.DIRECTIONAL);
       lightTop.enabled = true;
       lightTop.color = white;
-      lightTop.intensity = 10.0;
+      lightTop.intensity = this.currentSceneId === 'salon_carre' ? 6.0 : 10.0;
       lightTop.rotation = { x: -0.7071, y: 0, z: 0, w: 0.7071 };
 
       const sideLightParams: SceneNodeParameters = { name: 'sideLight' };
@@ -111,6 +135,7 @@ struct ExhibitionEditor {
 
       this.sceneInstance = scene;
       this.sceneReady = true;
+      this.editMode = true;
       animateTo({ duration: 400, curve: Curve.EaseInOut }, () => {
         this.sceneOpacity = 1;
       });
@@ -124,6 +149,16 @@ struct ExhibitionEditor {
       this.errorMsg = err.message ?? JSON.stringify(e);
       hilog.error(DOMAIN, 'Editor', 'load failed: %{public}s', JSON.stringify(e));
     }
+  }
+
+  private switchScene(sceneId: string): void {
+    if (sceneId === this.currentSceneId) {
+      this.showScenePicker = false;
+      return;
+    }
+    this.currentSceneId = sceneId;
+    this.showScenePicker = false;
+    this.loadCurrentScene();
   }
 
   aboutToDisappear(): void {
@@ -268,6 +303,11 @@ struct ExhibitionEditor {
 
   private totalSlots(): number {
     return getPaintingSlots(this.allSlots).length + getSculptureSlots(this.allSlots).length;
+  }
+
+  private getSceneName(): string {
+    const s = PRESET_SCENES.find(sc => sc.id === this.currentSceneId);
+    return s !== undefined ? s.name : '选择场景';
   }
 
   private getSelectedTitle(): string {
@@ -415,10 +455,14 @@ struct ExhibitionEditor {
           .fontColor('#ffffff')
           .onClick(() => { router.back(); })
 
-        Text('布展模拟器 · MoMA 白立方')
-          .fontSize(16)
-          .fontColor('#f5e6c8')
-          .fontWeight(FontWeight.Medium)
+        Button(this.getSceneName())
+          .fontSize(14)
+          .height(36)
+          .backgroundColor('#2a2a2e88')
+          .fontColor('#d4b678')
+          .borderColor('#d4b67844')
+          .borderWidth(1)
+          .onClick(() => { this.showScenePicker = !this.showScenePicker; })
 
         Blank()
 
@@ -460,6 +504,53 @@ struct ExhibitionEditor {
 
       // ——— 编辑模式 UI ———
       if (this.editMode && this.sceneReady) {
+        // 场景选择覆盖层
+        if (this.showScenePicker) {
+          Column() {
+            Column({ space: 8 }) {
+              Text('选择场景')
+                .fontSize(16)
+                .fontColor('#f5e6c8')
+                .fontWeight(FontWeight.Medium)
+
+              ForEach(PRESET_SCENES, (scene: SceneEntry) => {
+                Row({ space: 10 }) {
+                  Text(scene.name)
+                    .fontSize(14)
+                    .fontColor(this.currentSceneId === scene.id ? '#d4b678' : '#8a8a9a')
+                    .fontWeight(this.currentSceneId === scene.id ? FontWeight.Bold : FontWeight.Normal)
+                  Text(scene.description)
+                    .fontSize(11)
+                    .fontColor('#6a6a7a')
+                }
+                .width('100%')
+                .padding(10)
+                .backgroundColor(this.currentSceneId === scene.id ? '#2a2a3a' : '#1a1a2e')
+                .borderRadius(8)
+                .onClick(() => { this.switchScene(scene.id); })
+              }, (scene: SceneEntry) => scene.id)
+
+              Button('关闭')
+                .fontSize(12).height(32)
+                .backgroundColor('#3a3a3a').fontColor('#aaaaaa')
+                .onClick(() => { this.showScenePicker = false; })
+            }
+            .width(300)
+            .padding(16)
+            .backgroundColor('#1a1a2eF0')
+            .borderColor('#d4b67844')
+            .borderWidth(1)
+            .borderRadius(12)
+          }
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Center)
+          .backgroundColor('#00000044')
+          .position({ x: 0, y: 0 })
+          .onClick(() => { this.showScenePicker = false; })
+        }
+
         // 微调面板（居中覆盖层）
         if (this.fineTuneSlotId !== '') {
           Column() {

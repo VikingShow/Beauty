@@ -5,6 +5,7 @@
  * - 用户场景：运行时解析 glTF JSON 中的 Slot_* 节点（Phase 2）
  */
 import { ParsedSlot, SlotType, WHITE_CUBE_SLOTS } from './WhiteCubeSlots';
+import { SALON_CARRE_SLOTS } from './SalonCarreSlots';
 export { ParsedSlot, SlotType };
 
 /** 屏幕投影结果 */
@@ -90,11 +91,36 @@ export const PRESET_ARTWORKS: ArtworkEntry[] = [
  * 获取预设场景的槽位列表。
  * 未来扩展：传入 sceneId 获取不同场景的槽位。
  */
+/** 场景条目元数据 */
+export interface SceneEntry {
+  id: string;
+  name: string;
+  description: string;
+  gltfPath: string;  // $rawfile path
+}
+
+export const PRESET_SCENES: SceneEntry[] = [
+  {
+    id: 'white_cube',
+    name: 'MoMA 白立方',
+    description: '15×10m 现代白立方画廊，纯白墙面 + 轨道灯',
+    gltfPath: 'gltf/white_cube/scene.gltf'
+  },
+  {
+    id: 'salon_carre',
+    name: 'Salon Carré 卢浮宫方厅',
+    description: '30×10m 古典方厅，深红墙面 + 筒形拱顶',
+    gltfPath: 'gltf/salon_carre/scene.gltf'
+  }
+];
+
 export function getPresetSlots(sceneId: string): ParsedSlot[] {
   if (sceneId === 'white_cube') {
     return WHITE_CUBE_SLOTS;
   }
-  // 未来扩展更多场景
+  if (sceneId === 'salon_carre') {
+    return SALON_CARRE_SLOTS;
+  }
   return [];
 }
 
