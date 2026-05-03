@@ -3,85 +3,162 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebGL Test</title>
+<title>Exhibition Simulator</title>
 <style>
   * { margin:0; padding:0; }
   html,body { width:100%; height:100%; overflow:hidden; background:#0a0a1a; }
-  #status { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  #loader { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
             color:#d4b678; font:18px sans-serif; text-align:center; }
+  #error { position:absolute; top:10px; left:10px; color:#ff6b6b; font:12px monospace;
+           white-space:pre-wrap; max-width:90%; display:none; }
 </style>
 </head>
 <body>
-<div id="status">Testing WebGL...</div>
+<div id="loader">Loading Three.js...</div>
+<div id="error"></div>
 
-<script>
-(function(){
-  var s = document.getElementById('status');
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 
-  // Test 1: Does canvas exist?
-  var canvas = document.createElement('canvas');
-  if (!canvas) { s.textContent = 'FAIL: no canvas'; return; }
+<script type="module">
+  import * as THREE from 'three';
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-  // Test 2: Get WebGL context
-  var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-  if (!gl) { s.textContent = 'FAIL: no WebGL context'; return; }
+  const loaderEl = document.getElementById('loader');
+  const errorEl = document.getElementById('error');
 
-  // Test 3: Create shaders
-  var vs = gl.createShader(gl.VERTEX_SHADER);
-  gl.shaderSource(vs, 'attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}');
-  gl.compileShader(vs);
-  if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
-    s.textContent = 'FAIL: vertex shader';
-    return;
+  function showError(msg) {
+    errorEl.style.display = 'block';
+    errorEl.textContent += msg + '\n';
   }
 
-  var fs = gl.createShader(gl.FRAGMENT_SHADER);
-  gl.shaderSource(fs, 'precision mediump float;void main(){gl_FragColor=vec4(0.83,0.72,0.47,1);}');
-  gl.compileShader(fs);
-  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-    s.textContent = 'FAIL: fragment shader';
-    return;
+  loaderEl.textContent = 'Three.js loaded. Creating scene...';
+
+  // Scene
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0a1a);
+
+  // Camera
+  const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0, 1.65, 3.5);
+
+  // Renderer
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.shadowMap.enabled = true;
+  document.body.appendChild(renderer.domElement);
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 2));
+  const key = new THREE.DirectionalLight(0xfff5e6, 10);
+  key.position.set(5, 8, 0);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xb3c7f0, 5);
+  fill.position.set(-5, 3, 5);
+  scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xfff5e6, 4);
+  rim.position.set(0, 2, -5);
+  scene.add(rim);
+
+  // FPS controls state
+  const state = {
+    yaw: 0, pitch: 0,
+    moveX: 0, moveY: 0,
+    keys: {}
+  };
+
+  // Load glTF scene using rawfile:// protocol (intercepted by native layer)
+  loaderEl.textContent = 'Loading scene...';
+
+  const loader = new GLTFLoader();
+  // Override fetch to use rawfile:// protocol
+  const origFetch = loader.load.bind(loader);
+
+  loader.load(
+    'rawfile://gltf/white_cube/scene.gltf',
+    (gltf) => {
+      scene.add(gltf.scene);
+      loaderEl.style.display = 'none';
+      loaderEl.textContent = 'Scene loaded!';
+
+      // Traverse and log slot nodes
+      gltf.scene.traverse((node) => {
+        if (node.name && node.name.startsWith('Slot_')) {
+          console.log('Slot found:', node.name, node.position);
+        }
+      });
+
+      animate();
+    },
+    (progress) => {
+      if (progress.total > 0) {
+        loaderEl.textContent = 'Loading: ' + Math.round(progress.loaded / progress.total * 100) + '%';
+      }
+    },
+    (error) => {
+      loaderEl.textContent = 'Failed to load scene';
+      showError('GLTF load error: ' + (error.message || error));
+    }
+  );
+
+  function updateCamera() {
+    const yaw = state.yaw;
+    const pitch = Math.max(-1.5, Math.min(1.5, state.pitch));
+    const cp = Math.cos(pitch);
+    camera.position.x += (-Math.sin(yaw) * state.moveY * 0.05 + Math.cos(yaw) * state.moveX * 0.04);
+    camera.position.z += (-Math.cos(yaw) * state.moveY * 0.05 - Math.sin(yaw) * state.moveX * 0.04);
+
+    // Look direction
+    const dx = Math.sin(yaw) * cp;
+    const dy = -Math.sin(pitch);
+    const dz = -Math.cos(yaw) * cp;
+    camera.lookAt(
+      camera.position.x + dx,
+      camera.position.y + dy,
+      camera.position.z + dz
+    );
   }
 
-  // Test 4: Create program
-  var prog = gl.createProgram();
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-    s.textContent = 'FAIL: program link';
-    return;
+  function animate() {
+    requestAnimationFrame(animate);
+    updateCamera();
+    renderer.render(scene, camera);
   }
 
-  // Test 5: Create buffer + draw
-  var buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0,1, -1,-1, 1,-1]), gl.STATIC_DRAW);
+  // Mouse/touch look
+  let dragging = false;
+  let lastX = 0, lastY = 0;
 
-  var loc = gl.getAttribLocation(prog, 'p');
-  gl.enableVertexAttribArray(loc);
-  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+  });
+  window.addEventListener('pointerup', () => { dragging = false; });
+  window.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    state.yaw -= (e.clientX - lastX) * 0.004;
+    state.pitch -= (e.clientY - lastY) * 0.004;
+    lastX = e.clientX; lastY = e.clientY;
+  });
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  gl.viewport(0, 0, canvas.width, canvas.height);
+  // Keyboard
+  window.addEventListener('keydown', (e) => { state.keys[e.key] = true; });
+  window.addEventListener('keyup', (e) => { state.keys[e.key] = false; });
 
-  gl.clearColor(0.04, 0.04, 0.10, 1);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  gl.useProgram(prog);
-  gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-  document.body.appendChild(canvas);
-
-  var info = 'WebGL OK!\n';
-  info += 'Renderer: ' + gl.getParameter(gl.RENDERER) + '\n';
-  info += 'Vendor: ' + gl.getParameter(gl.VENDOR) + '\n';
-  info += 'Version: ' + gl.getParameter(gl.VERSION) + '\n';
-  info += 'Max texture: ' + gl.getParameter(gl.MAX_TEXTURE_SIZE);
-  s.style.whiteSpace = 'pre-line';
-  s.textContent = info;
-})();
+  // Continuous movement from keyboard
+  setInterval(() => {
+    state.moveX = 0; state.moveY = 0;
+    if (state.keys['w'] || state.keys['ArrowUp']) state.moveY = 1;
+    if (state.keys['s'] || state.keys['ArrowDown']) state.moveY = -1;
+    if (state.keys['a'] || state.keys['ArrowLeft']) state.moveX = -1;
+    if (state.keys['d'] || state.keys['ArrowRight']) state.moveX = 1;
+  }, 16);
 </script>
 </body>
 </html>
