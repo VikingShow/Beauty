@@ -3,132 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Exhibition Simulator</title>
+<title>Module Test</title>
 <style>
-  * { margin:0; padding:0; }
-  html,body { width:100%; height:100%; overflow:hidden; background:#0a0a1a; }
-  #loader { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-            color:#d4b678; font:18px sans-serif; text-align:center; }
-  #info { position:absolute; top:10px; left:10px; color:#6a6; font:11px monospace;
-           white-space:pre-wrap; max-width:90%; }
+  *{margin:0;padding:0;}
+  html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;}
+  #status{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+          color:#d4b678;font:18px sans-serif;text-align:center;white-space:pre-line;max-width:90%;}
 </style>
 </head>
 <body>
-<div id="loader">Loading...</div>
-<div id="info"></div>
+<div id="status">Test 1: HTML loaded</div>
 
-<!-- GLTF data (embedded textures, sets window.GLTF_DATA) -->
+<!-- Test 1: gltf_data.js regular script -->
 <script src="js/gltf_data.js"></script>
+<script>
+  var S = document.getElementById('status');
+  function ok(m) { S.textContent += '\n' + m; }
+  function fail(m) { S.textContent += '\n' + m; S.style.color = '#ff6b6b'; }
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "./js/three.module.js",
-    "three/addons/loaders/GLTFLoader.js": "./js/GLTFLoader.js"
-  }
-}
+  if (window.GLTF_DATA) ok('Test 2: gltf_data.js OK (' + JSON.stringify(window.GLTF_DATA).length + ' chars)');
+  else fail('Test 2: gltf_data.js FAILED');
 </script>
 
+<!-- Test 2: importmap -->
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+
+<!-- Test 3: ESM import -->
 <script type="module">
   import * as THREE from 'three';
-  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+  var S = document.getElementById('status');
+  S.textContent += '\nTest 3: THREE imported v' + THREE.REVISION;
 
-  const loaderEl = document.getElementById('loader');
-  const infoEl = document.getElementById('info');
-  function info(msg) { infoEl.textContent += msg + '\n'; }
+  // Quick render test: spinning gold cube + white floor
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0a1a);
 
-  // Use embedded glTF data (set by gltf_data.js)
-  loaderEl.textContent = 'Parsing glTF...';
-  const gltfData = window.GLTF_DATA;
-  info('glTF: ' + (JSON.stringify(gltfData).length / 1024).toFixed(0) + 'KB');
+  var cam = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, 0.1, 100);
+  cam.position.set(0, 2, 5);
+  cam.lookAt(0, 0, 0);
 
-  const loader = new GLTFLoader();
-  loader.parse(JSON.stringify(gltfData), '', function(gltf) {
-    loaderEl.style.display = 'none';
-    initScene(gltf.scene);
-  }, function(e) {
-    loaderEl.textContent = 'Parse failed';
-    info('Error: ' + (e.message || e));
-  });
+  var r = new THREE.WebGLRenderer({antialias:true});
+  r.setSize(window.innerWidth, window.innerHeight);
+  r.setPixelRatio(devicePixelRatio);
+  document.body.appendChild(r.domElement);
 
-  function initScene(loadedScene) {
-    info('Scene loaded!');
+  scene.add(new THREE.AmbientLight(0xffffff, 2));
+  var dl = new THREE.DirectionalLight(0xd4b678, 5);
+  dl.position.set(3, 5, 3);
+  scene.add(dl);
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a1a);
+  var floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(15, 10),
+    new THREE.MeshStandardMaterial({color:0xb4b2ae, roughness:0.3})
+  );
+  floor.rotation.x = -Math.PI/2;
+  scene.add(floor);
 
-    const camera = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, 0.1, 100);
-    camera.position.set(0, 1.65, 3.5);
+  var geo = new THREE.BoxGeometry(1, 1, 1);
+  var mat = new THREE.MeshStandardMaterial({color:0xd4b678, roughness:0.3, metalness:0.5});
+  var cube = new THREE.Mesh(geo, mat);
+  cube.position.y = 0.5;
+  scene.add(cube);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.enabled = true;
-    document.body.appendChild(renderer.domElement);
-
-    // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 2));
-    const key = new THREE.DirectionalLight(0xfff5e6, 10);
-    key.position.set(5, 8, 0); scene.add(key);
-    const fill = new THREE.DirectionalLight(0xb3c7f0, 5);
-    fill.position.set(-5, 3, 5); scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xfff5e6, 4);
-    rim.position.set(0, 2, -5); scene.add(rim);
-
-    scene.add(loadedScene);
-
-    // Slot nodes
-    const slots = [];
-    loadedScene.traverse(function(node) {
-      if (node.name && node.name.startsWith('Slot_')) {
-        slots.push({ name: node.name, pos: node.position.clone() });
-      }
-    });
-    info('Slots: ' + slots.length);
-    for (let i = 0; i < slots.length; i++) {
-      info('  ' + slots[i].name);
-    }
-
-    // FPS camera
-    const state = { yaw:0, pitch:0, moveX:0, moveY:0, keys:{} };
-
-    function animate() {
-      requestAnimationFrame(animate);
-      const yaw = state.yaw, pitch = Math.max(-1.5, Math.min(1.5, state.pitch));
-      const cp = Math.cos(pitch), sp = Math.sin(pitch);
-      if (state.moveY !== 0 || state.moveX !== 0) {
-        camera.position.x += (-Math.sin(yaw)*state.moveY*0.05 + Math.cos(yaw)*state.moveX*0.04);
-        camera.position.z += (-Math.cos(yaw)*state.moveY*0.05 - Math.sin(yaw)*state.moveX*0.04);
-      }
-      camera.lookAt(camera.position.x + Math.sin(yaw)*cp,
-                    camera.position.y - sp,
-                    camera.position.z - Math.cos(yaw)*cp);
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    // Touch look
-    let dragging=false, lx=0, ly=0;
-    renderer.domElement.addEventListener('pointerdown', function(e){dragging=true;lx=e.clientX;ly=e.clientY;});
-    window.addEventListener('pointerup', function(){dragging=false;});
-    window.addEventListener('pointermove', function(e){
-      if(!dragging)return;
-      state.yaw-=(e.clientX-lx)*0.004;
-      state.pitch-=(e.clientY-ly)*0.004;
-      lx=e.clientX;ly=e.clientY;
-    });
-
-    // Keyboard
-    window.addEventListener('keydown', function(e){state.keys[e.key]=true;});
-    window.addEventListener('keyup', function(e){state.keys[e.key]=false;});
-    setInterval(function(){
-      state.moveX=0;state.moveY=0;
-      if(state.keys['w']||state.keys['ArrowUp'])state.moveY=1;
-      if(state.keys['s']||state.keys['ArrowDown'])state.moveY=-1;
-      if(state.keys['a']||state.keys['ArrowLeft'])state.moveX=-1;
-      if(state.keys['d']||state.keys['ArrowRight'])state.moveX=1;
-    },16);
+  function loop() {
+    requestAnimationFrame(loop);
+    cube.rotation.y += 0.01;
+    r.render(scene, cam);
   }
+  loop();
+
+  S.style.display = 'none';
 </script>
 </body>
 </html>
