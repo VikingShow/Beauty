@@ -6,7 +6,6 @@
  */
 import { ParsedSlot, SlotType, WHITE_CUBE_SLOTS } from './WhiteCubeSlots';
 import { SALON_CARRE_SLOTS } from './SalonCarreSlots';
-export { ParsedSlot, SlotType };
 
 /** 屏幕投影结果 */
 export interface ScreenPoint {
