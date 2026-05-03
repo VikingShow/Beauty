@@ -98,10 +98,26 @@ struct ExhibitionEditor {
   private cachedOverlays: GhostRect[] = [];
   private sandboxScenePath: string = '';
   private sandboxRegistered: boolean = false;
+  private cachedGltfJson: string = ''; // cached raw glTF JSON text
 
   async aboutToAppear(): Promise<void> {
     this.walls = getWallsForScene(this.currentSceneId);
+    // Pre-cache glTF JSON for later rebuilds
+    this.cacheGltfJson();
     await this.loadScene();
+  }
+
+  private cacheGltfJson(): void {
+    try {
+      const basePath: string = this.currentSceneId === 'salon_carre'
+        ? 'gltf/salon_carre/scene.gltf' : 'gltf/white_cube/scene.gltf';
+      const ctx = getContext(this);
+      const rawBytes = ctx.resourceManager.getRawFileContentSync(basePath);
+      this.cachedGltfJson = this.bytesToString(rawBytes);
+      hilog.info(DOMAIN, 'Editor', 'cached glTF JSON: %{public}d chars', this.cachedGltfJson.length);
+    } catch (e) {
+      hilog.error(DOMAIN, 'Editor', 'cache glTF failed: %{public}s', JSON.stringify(e));
+    }
   }
 
   private getSceneResource(): Resource {
@@ -213,17 +229,21 @@ struct ExhibitionEditor {
         }
       }
 
-      const basePath: string = this.currentSceneId === 'salon_carre'
-        ? 'gltf/salon_carre/scene.gltf' : 'gltf/white_cube/scene.gltf';
-      hilog.info(DOMAIN, 'Editor', 'rebuild: reading rawfile %{public}s', basePath);
-      const rm = context.resourceManager;
-      const rawFd = rm.getRawFdSync(basePath);
-      const fd: number = rawFd.fd;
-      const fileLen: number = rawFd.length;
-      const rawBytes = new Uint8Array(fileLen);
-      fileIo.readSync(fd, rawBytes);
-      fileIo.closeSync(fd);
-      const rawText = this.bytesToString(rawBytes);
+      // Use cached glTF JSON if available, otherwise read from rawfile
+      let rawText: string;
+      if (this.cachedGltfJson !== '') {
+        rawText = this.cachedGltfJson;
+        hilog.info(DOMAIN, 'Editor', 'rebuild: using cached glTF (%{public}d chars)', rawText.length);
+      } else {
+        const basePath: string = this.currentSceneId === 'salon_carre'
+          ? 'gltf/salon_carre/scene.gltf' : 'gltf/white_cube/scene.gltf';
+        hilog.info(DOMAIN, 'Editor', 'rebuild: reading rawfile %{public}s', basePath);
+        // Try getRawFileContentSync with a direct path
+        const rawBytes = context.resourceManager.getRawFileContentSync(basePath);
+        rawText = this.bytesToString(rawBytes);
+        this.cachedGltfJson = rawText;
+        hilog.info(DOMAIN, 'Editor', 'rebuild: read + cached glTF (%{public}d chars)', rawText.length);
+      }
       const gltf: GltfRoot = JSON.parse(rawText) as GltfRoot;
       hilog.info(DOMAIN, 'Editor', 'rebuild: glTF parsed, buffers=%{public}d', gltf.buffers.length);
 
