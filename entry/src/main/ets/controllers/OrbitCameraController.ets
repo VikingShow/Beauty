@@ -22,6 +22,7 @@ export class OrbitCameraController extends CameraController {
   private readonly panSensitivity: number;
   private readonly minDistance: number;
   private readonly maxDistance: number;
+  private updateListener: (() => void) | undefined = undefined;
 
   constructor(
     initialDistance: number = 5,
@@ -66,6 +67,24 @@ export class OrbitCameraController extends CameraController {
   getPitch(): number { return this.pitch; }
   getDistance(): number { return this.distance; }
 
+  setOnUpdate(callback: () => void): void {
+    this.updateListener = callback;
+  }
+
+  getViewYaw(): number {
+    const px = this.getPositionX();
+    const pz = this.getPositionZ();
+    return Math.atan2(-px, pz);
+  }
+
+  getViewPitch(): number {
+    const px = this.getPositionX();
+    const py = this.getPositionY();
+    const pz = this.getPositionZ();
+    const horiz = Math.sqrt(px * px + pz * pz);
+    return Math.atan2(-py, horiz);
+  }
+
   private apply(): void {
     if (this.camera === undefined) {
       return;
@@ -91,5 +110,9 @@ export class OrbitCameraController extends CameraController {
       z: sy * sp,
       w: cy * cp
     };
+
+    if (this.updateListener !== undefined) {
+      this.updateListener();
+    }
   }
 }

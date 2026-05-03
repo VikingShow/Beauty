@@ -66,6 +66,22 @@ def make_white_wall(size: int = 256) -> Image.Image:
     return img
 
 
+def make_slot_frame(size: int = 256) -> Image.Image:
+    """槽位占位框：半透明白底 + 金色内边框"""
+    r0, g0, b0 = (255, 255, 255)
+    img = Image.new('RGBA', (size, size), (r0, g0, b0, 40))
+    draw = ImageDraw.Draw(img)
+    border = (180, 150, 80, 200)
+    margin = 8
+    draw.rectangle([margin, margin, size - margin - 1, size - margin - 1],
+                   outline=border, width=3)
+    # 内角装饰线
+    inner = 24
+    draw.rectangle([inner, inner, size - inner - 1, size - inner - 1],
+                   outline=border, width=1)
+    return img
+
+
 def make_grid_ceiling(size: int = 256) -> Image.Image:
     """方格吊顶：浅灰白底 + 纵横格线（仿石膏板天花 + 轨道射灯槽）"""
     r0, g0, b0 = (232, 231, 228)
@@ -85,6 +101,7 @@ def make_grid_ceiling(size: int = 256) -> Image.Image:
 MAT_FLOOR = 0
 MAT_CEILING = 1
 MAT_WALL = 2
+MAT_SLOT = 3  # slot frame material
 
 # UV 缩放
 UV_FLOOR = 1.0 / 1.5    # 每 1.5m 重复
@@ -165,6 +182,43 @@ PAINTING_SLOTS = [
     ("Slot_Painting_West02", -HW,  2.5, [1, 0, 0], "西墙后"),
 ]
 
+# ==================== 槽位占位框几何 ====================
+SLOT_EPSILON = 0.005
+slot_quad_faces: list = []  # (verts4, normal, uv_u, uv_v, mat)
+
+
+def add_slot_painting_quad(cx: float, cy: float, cz: float,
+                            nx: float, nz: float):
+    right_x = nz
+    right_z = -nx
+    hw = SLOT_W / 2.0
+    hh = SLOT_H / 2.0
+    ox = cx + nx * SLOT_EPSILON
+    oy = cy
+    oz = cz + nz * SLOT_EPSILON
+    tl = (ox + right_x * (-hw), oy + hh, oz + right_z * (-hw))
+    tr = (ox + right_x * (hw), oy + hh, oz + right_z * (hw))
+    br = (ox + right_x * (hw), oy - hh, oz + right_z * (hw))
+    bl = (ox + right_x * (-hw), oy - hh, oz + right_z * (-hw))
+    normal = (nx, 0.0, nz)
+    slot_quad_faces.append(([bl, tl, tr, br], normal, 1.0, 1.0, MAT_SLOT))
+
+
+def add_slot_sculpture_platform(cx: float, cz: float):
+    hsize = 0.8
+    y = 0.02
+    v0 = (cx - hsize, y, cz - hsize)
+    v1 = (cx - hsize, y, cz + hsize)
+    v2 = (cx + hsize, y, cz + hsize)
+    v3 = (cx + hsize, y, cz - hsize)
+    slot_quad_faces.append(([v0, v1, v2, v3], (0.0, 1.0, 0.0), 1.0, 1.0, MAT_SLOT))
+
+
+for name, px, pz, facing, label in PAINTING_SLOTS:
+    add_slot_painting_quad(px, PAINTING_Y, pz, facing[0], facing[2])
+
+add_slot_sculpture_platform(SCULPTURE_CENTER[0], SCULPTURE_CENTER[2])
+
 SLOT_NODES = []  # glTF node entries for slots
 SLOT_TS_ENTRIES = []  # TypeScript entries
 
@@ -235,10 +289,14 @@ SLOT_NODES.append({
 positions: list[float] = []
 normals: list[float] = []
 uvs: list[float] = []
-indices_by_mat: dict[int, list[int]] = {MAT_FLOOR: [], MAT_CEILING: [], MAT_WALL: []}
+indices_by_mat: dict[int, list[int]] = {MAT_FLOOR: [], MAT_CEILING: [], MAT_WALL: [], MAT_SLOT: []}
+
+# 将 slot quads 加入主面孔列表
+faces_with_slots = list(faces)
+faces_with_slots.extend(slot_quad_faces)
 
 vertex_count = 0
-for verts4, normal, uv_u, uv_v, mat in faces:
+for verts4, normal, uv_u, uv_v, mat in faces_with_slots:
     base = vertex_count
     for vx, vy, vz in verts4:
         positions.extend([vx, vy, vz])
@@ -251,7 +309,7 @@ for verts4, normal, uv_u, uv_v, mat in faces:
 
 all_indices: list[int] = []
 primitive_ranges: list[tuple[int, int, int]] = []
-for mat in [MAT_FLOOR, MAT_CEILING, MAT_WALL]:
+for mat in [MAT_FLOOR, MAT_CEILING, MAT_WALL, MAT_SLOT]:
     start = len(all_indices)
     all_indices.extend(indices_by_mat[mat])
     count = len(all_indices) - start
@@ -287,7 +345,8 @@ print("Generating textures...")
 make_concrete_floor().save(os.path.join(TEX_DIR, 'floor_basecolor.png'), optimize=True)
 make_white_wall().save(os.path.join(TEX_DIR, 'wall_basecolor.png'), optimize=True)
 make_grid_ceiling().save(os.path.join(TEX_DIR, 'ceiling_basecolor.png'), optimize=True)
-print("  floor_basecolor.png | wall_basecolor.png | ceiling_basecolor.png")
+make_slot_frame().save(os.path.join(TEX_DIR, 'slot_frame.png'), optimize=True)
+print("  floor_basecolor.png | wall_basecolor.png | ceiling_basecolor.png | slot_frame.png")
 
 # ==================== glTF 文档 ====================
 
@@ -338,12 +397,23 @@ gltf = {
                 "roughnessFactor": 0.85
             },
             "doubleSided": True
+        },
+        {
+            "name": "SlotFrame",
+            "pbrMetallicRoughness": {
+                "baseColorTexture": {"index": 3},
+                "metallicFactor": 0.0,
+                "roughnessFactor": 0.7
+            },
+            "alphaMode": "BLEND",
+            "doubleSided": True
         }
     ],
     "textures": [
         {"source": 0, "sampler": 0},
         {"source": 1, "sampler": 0},
-        {"source": 2, "sampler": 0}
+        {"source": 2, "sampler": 0},
+        {"source": 3, "sampler": 0}
     ],
     "samplers": [{
         "magFilter": 9729,
@@ -354,7 +424,8 @@ gltf = {
     "images": [
         {"uri": "textures/floor_basecolor.png"},
         {"uri": "textures/wall_basecolor.png"},
-        {"uri": "textures/ceiling_basecolor.png"}
+        {"uri": "textures/ceiling_basecolor.png"},
+        {"uri": "textures/slot_frame.png"}
     ],
     "buffers": [{
         "uri": "data:application/octet-stream;base64," + b64,

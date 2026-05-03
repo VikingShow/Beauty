@@ -9,6 +9,8 @@ import {
 } from '@kit.ArkGraphics3D';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { photoAccessHelper } from '@kit.MediaLibraryKit';
+import { fileIo } from '@kit.CoreFileKit';
 import { OrbitCameraController } from '../controllers/OrbitCameraController';
 import { FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
 import { ParsedSlot, Placement, ArtworkEntry, PRESET_ARTWORKS, getPresetSlots, getPaintingSlots, getSculptureSlots, getSpawnSlot } from '../scenes/SlotParser';
@@ -50,6 +52,9 @@ struct ExhibitionEditor {
   @State private showSlotPanel: boolean = false;
   @State private loadingOpacity: number = 1;
   @State private sceneOpacity: number = 0;
+  @State private userArtworks: ArtworkEntry[] = [];
+  @State private uploadError: string = '';
+  @State private fineTuneSlotId: string = '';
 
   private sceneInstance: Scene | undefined = undefined;
   private mainCamera: Camera | undefined = undefined;
@@ -178,7 +183,7 @@ struct ExhibitionEditor {
 
   private placeInSlot(slot: ParsedSlot): void {
     if (this.selectedArtworkId === '') return;
-    const artwork = PRESET_ARTWORKS.find(a => a.id === this.selectedArtworkId);
+    const artwork = this.getAllArtworks().find(a => a.id === this.selectedArtworkId);
     if (artwork === undefined) return;
 
     const filtered = this.placements.filter(p => p.slotId !== slot.slotId);
@@ -205,6 +210,58 @@ struct ExhibitionEditor {
     return undefined;
   }
 
+  private adjustPlacement(slotId: string, dX: number, dY: number): void {
+    const updated: Placement[] = [];
+    for (const p of this.placements) {
+      if (p.slotId === slotId) {
+        const adjusted: Placement = {
+          slotId: p.slotId,
+          artworkId: p.artworkId,
+          artworkTitle: p.artworkTitle,
+          scale: p.scale,
+          offsetX: p.offsetX + dX,
+          offsetY: p.offsetY + dY
+        };
+        updated.push(adjusted);
+      } else {
+        updated.push(p);
+      }
+    }
+    this.placements = updated;
+  }
+
+  private getFineTunePlacement(): Placement | undefined {
+    if (this.fineTuneSlotId === '') return undefined;
+    return this.getPlacementForSlot(this.fineTuneSlotId);
+  }
+
+  private fineTuneOffset(dX: number, dY: number): void {
+    this.adjustPlacement(this.fineTuneSlotId, dX, dY);
+  }
+
+  private fineTuneScale(delta: number): void {
+    const p = this.getFineTunePlacement();
+    if (p === undefined) return;
+    const updated: Placement[] = [];
+    for (const pl of this.placements) {
+      if (pl.slotId === this.fineTuneSlotId) {
+        const newScale: number = Math.max(0.3, Math.min(2.0, pl.scale + delta));
+        const scaled: Placement = {
+          slotId: pl.slotId,
+          artworkId: pl.artworkId,
+          artworkTitle: pl.artworkTitle,
+          scale: newScale,
+          offsetX: pl.offsetX,
+          offsetY: pl.offsetY
+        };
+        updated.push(scaled);
+      } else {
+        updated.push(pl);
+      }
+    }
+    this.placements = updated;
+  }
+
   private filledCount(): number {
     return this.placements.length;
   }
@@ -214,8 +271,44 @@ struct ExhibitionEditor {
   }
 
   private getSelectedTitle(): string {
-    const a = PRESET_ARTWORKS.find(art => art.id === this.selectedArtworkId);
+    const a = this.getAllArtworks().find(art => art.id === this.selectedArtworkId);
     return a !== undefined ? a.titleZh + ' - ' + a.artist : '';
+  }
+
+  private getAllArtworks(): ArtworkEntry[] {
+    return PRESET_ARTWORKS.concat(this.userArtworks);
+  }
+
+  private async pickAndAddArtwork(): Promise<void> {
+    try {
+      const photoPicker = new photoAccessHelper.PhotoViewPicker();
+      const result: photoAccessHelper.PhotoSelectResult = await photoPicker.select({
+        MIMEType: photoAccessHelper.PhotoViewMIMETypes.IMAGE_TYPE,
+        maxSelectNumber: 1
+      });
+      const uris: string[] = result.photoUris;
+      if (uris.length === 0) return;
+      const uri: string = uris[0];
+
+      // Generate unique ID and create artwork entry
+      const timestamp: number = Date.now();
+      const newId: string = 'user_' + timestamp.toString();
+      const newArtwork: ArtworkEntry = {
+        id: newId,
+        titleZh: '我的作品 ' + (this.userArtworks.length + 1).toString(),
+        titleEn: 'My Artwork ' + (this.userArtworks.length + 1).toString(),
+        artist: '未知',
+        imageUri: uri,
+        type: 'painting'
+      };
+      this.userArtworks = this.userArtworks.concat([newArtwork]);
+      this.selectedArtworkId = newId;
+      hilog.info(DOMAIN, 'Editor', 'uploaded artwork: %{public}s', uri);
+    } catch (e) {
+      const err = e as BusinessError;
+      this.uploadError = err.message ?? '上传失败';
+      hilog.error(DOMAIN, 'Editor', 'upload failed: %{public}s', JSON.stringify(e));
+    }
   }
 
   private onOrbitPanStart(): void {
@@ -333,6 +426,20 @@ struct ExhibitionEditor {
           .fontSize(13)
           .fontColor('#b9a57a')
 
+        Button('导出')
+          .fontSize(12)
+          .height(36)
+          .backgroundColor('#2a2a3a')
+          .fontColor('#b9a57a')
+          .onClick(() => { this.exportPlacements(); })
+
+        Button('导入')
+          .fontSize(12)
+          .height(36)
+          .backgroundColor('#2a2a3a')
+          .fontColor('#b9a57a')
+          .onClick(() => { this.importPlacements(); })
+
         Button(this.editMode ? '预览漫游' : '返回编辑')
           .fontSize(13)
           .height(36)
@@ -353,6 +460,19 @@ struct ExhibitionEditor {
 
       // ——— 编辑模式 UI ———
       if (this.editMode && this.sceneReady) {
+        // 微调面板（居中覆盖层）
+        if (this.fineTuneSlotId !== '') {
+          Column() {
+            this.buildFineTunePanel()
+          }
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Center)
+          .backgroundColor('#00000044')
+          .position({ x: 0, y: 0 })
+        }
+
         Column({ space: 8 }) {
           // 默认状态：选择艺术品按钮
           if (!this.showArtworkPicker && !this.showSlotPanel) {
@@ -453,7 +573,30 @@ struct ExhibitionEditor {
 
       Scroll() {
         Row({ space: 12 }) {
-          ForEach(PRESET_ARTWORKS, (artwork: ArtworkEntry) => {
+          // 上传按钮
+          Column({ space: 4 }) {
+            Row() {
+              Text('+')
+                .fontSize(22)
+                .fontColor('#d4b678')
+            }
+            .width(72)
+            .height(54)
+            .backgroundColor('#2a2a38')
+            .borderColor('#d4b678')
+            .borderWidth(1)
+            .borderRadius(6)
+            .borderStyle(BorderStyle.Dashed)
+            .justifyContent(FlexAlign.Center)
+
+            Text('上传图片')
+              .fontSize(10)
+              .fontColor('#d4b678')
+          }
+          .onClick(() => { this.pickAndAddArtwork(); })
+
+          // 预置艺术品 + 用户上传
+          ForEach(this.getAllArtworks(), (artwork: ArtworkEntry) => {
             Column({ space: 6 }) {
               Row() {
                 Text(artwork.titleZh.substring(0, 2))
@@ -492,6 +635,165 @@ struct ExhibitionEditor {
       .height(120)
     }
     .width('100%')
+  }
+
+  @Builder
+  buildFineTunePanel() {
+    Column({ space: 14 }) {
+      Text('微调 · ' + this.fineTuneSlotId)
+        .fontSize(16)
+        .fontColor('#f5e6c8')
+        .fontWeight(FontWeight.Medium)
+
+      Row({ space: 10 }) {
+        Text('水平位移')
+          .fontSize(12).fontColor('#8a8a9a').width(70)
+        Button('-1 cm')
+          .fontSize(12).height(32).backgroundColor('#3a3a3a').fontColor('#d4b678')
+          .onClick(() => { this.fineTuneOffset(-0.01, 0); })
+        Text(this.fineTuneOffsetXStr())
+          .fontSize(12).fontColor('#d4b678').width(60).textAlign(TextAlign.Center)
+        Button('+1 cm')
+          .fontSize(12).height(32).backgroundColor('#3a3a3a').fontColor('#d4b678')
+          .onClick(() => { this.fineTuneOffset(0.01, 0); })
+      }
+
+      Row({ space: 10 }) {
+        Text('垂直位移')
+          .fontSize(12).fontColor('#8a8a9a').width(70)
+        Button('-1 cm')
+          .fontSize(12).height(32).backgroundColor('#3a3a3a').fontColor('#d4b678')
+          .onClick(() => { this.fineTuneOffset(0, -0.01); })
+        Text(this.fineTuneOffsetYStr())
+          .fontSize(12).fontColor('#d4b678').width(60).textAlign(TextAlign.Center)
+        Button('+1 cm')
+          .fontSize(12).height(32).backgroundColor('#3a3a3a').fontColor('#d4b678')
+          .onClick(() => { this.fineTuneOffset(0, 0.01); })
+      }
+
+      Row({ space: 10 }) {
+        Text('缩放')
+          .fontSize(12).fontColor('#8a8a9a').width(70)
+        Button('-10%')
+          .fontSize(12).height(32).backgroundColor('#3a3a3a').fontColor('#d4b678')
+          .onClick(() => { this.fineTuneScale(-0.1); })
+        Text(this.fineTuneScaleStr())
+          .fontSize(12).fontColor('#d4b678').width(50).textAlign(TextAlign.Center)
+        Button('+10%')
+          .fontSize(12).height(32).backgroundColor('#3a3a3a').fontColor('#d4b678')
+          .onClick(() => { this.fineTuneScale(0.1); })
+      }
+
+      Row({ space: 16 }) {
+        Button('移除作品')
+          .fontSize(12).height(36).backgroundColor('#3a2020').fontColor('#ff6b6b')
+          .onClick(() => {
+            this.removePlacement(this.fineTuneSlotId);
+            this.fineTuneSlotId = '';
+          })
+        Button('完成')
+          .fontSize(12).height(36).backgroundColor('#d4b678').fontColor('#1a1a1a')
+          .onClick(() => { this.fineTuneSlotId = ''; })
+      }
+    }
+    .width(320)
+    .padding(20)
+    .backgroundColor('#1a1a2eF0')
+    .borderColor('#d4b678')
+    .borderWidth(1)
+    .borderRadius(12)
+  }
+
+  private fineTuneOffsetXStr(): string {
+    const p = this.getFineTunePlacement();
+    if (p === undefined) return '0.000';
+    return (p.offsetX * 100).toFixed(1).toString() + 'cm';
+  }
+  private fineTuneOffsetYStr(): string {
+    const p = this.getFineTunePlacement();
+    if (p === undefined) return '0.000';
+    return (p.offsetY * 100).toFixed(1).toString() + 'cm';
+  }
+  private fineTuneScaleStr(): string {
+    const p = this.getFineTunePlacement();
+    if (p === undefined) return '90%';
+    return (p.scale * 100).toFixed(0).toString() + '%';
+  }
+
+  private exportPlacements(): void {
+    try {
+      const data = {
+        sceneId: 'white_cube',
+        exportedAt: new Date().toISOString(),
+        placements: this.placements
+      };
+      const json: string = JSON.stringify(data);
+      const context = getContext(this);
+      const dir: string = context.filesDir;
+      const path: string = dir + '/exhibition_' + Date.now().toString() + '.json';
+      const file: fileIo.File = fileIo.openSync(path, fileIo.OpenMode.CREATE | fileIo.OpenMode.WRITE_ONLY | fileIo.OpenMode.TRUNC);
+      fileIo.writeSync(file.fd, json);
+      fileIo.closeSync(file);
+      this.uploadError = '';
+      hilog.info(DOMAIN, 'Editor', 'exported to: %{public}s', path);
+    } catch (e) {
+      const err = e as BusinessError;
+      this.uploadError = '导出失败: ' + (err.message ?? '');
+      hilog.error(DOMAIN, 'Editor', 'export failed: %{public}s', JSON.stringify(e));
+    }
+  }
+
+  private importPlacements(): void {
+    try {
+      const context = getContext(this);
+      const dir: string = context.filesDir;
+      // List JSON files in filesDir
+      const files: string[] = fileIo.listFileSync(dir);
+      // Find the most recent exhibition JSON
+      let latestPath: string = '';
+      let latestTime: number = 0;
+      for (const f of files) {
+        if (f.startsWith('exhibition_') && f.endsWith('.json')) {
+          const fullPath: string = dir + '/' + f;
+          const stat: fileIo.Stat = fileIo.statSync(fullPath);
+          if (stat.mtime > latestTime) {
+            latestTime = stat.mtime;
+            latestPath = fullPath;
+          }
+        }
+      }
+      if (latestPath === '') {
+        this.uploadError = '未找到导出的展览文件';
+        return;
+      }
+      const content: string = fileIo.readTextSync(latestPath);
+      const data = JSON.parse(content) as Record<string, Object>;
+      const imported: Object[] = data['placements'] as Object[];
+      if (imported === undefined || imported.length === 0) {
+        this.uploadError = '文件中无放置数据';
+        return;
+      }
+      const newPlacements: Placement[] = [];
+      for (const obj of imported) {
+        const record = obj as Record<string, Object>;
+        const p: Placement = {
+          slotId: (record['slotId'] as string) ?? '',
+          artworkId: (record['artworkId'] as string) ?? '',
+          artworkTitle: (record['artworkTitle'] as string) ?? '',
+          scale: (record['scale'] as number) ?? 0.9,
+          offsetX: (record['offsetX'] as number) ?? 0,
+          offsetY: (record['offsetY'] as number) ?? 0
+        };
+        newPlacements.push(p);
+      }
+      this.placements = newPlacements;
+      this.uploadError = '';
+      hilog.info(DOMAIN, 'Editor', 'imported %{public}d placements', newPlacements.length);
+    } catch (e) {
+      const err = e as BusinessError;
+      this.uploadError = '导入失败: ' + (err.message ?? '');
+      hilog.error(DOMAIN, 'Editor', 'import failed: %{public}s', JSON.stringify(e));
+    }
   }
 
   @Builder
@@ -551,7 +853,13 @@ struct ExhibitionEditor {
                   this.getPlacementForSlot(slot.slotId) !== undefined ? '#8a8' : '#d4b678'
                 )
             }
-            .onClick(() => { this.placeInSlot(slot); })
+            .onClick(() => {
+              if (this.getPlacementForSlot(slot.slotId) !== undefined) {
+                this.fineTuneSlotId = slot.slotId;
+              } else {
+                this.placeInSlot(slot);
+              }
+            })
           }, (slot: ParsedSlot) => slot.slotId)
 
           ForEach(getSculptureSlots(this.allSlots), (slot: ParsedSlot) => {
@@ -581,7 +889,13 @@ struct ExhibitionEditor {
                   this.getPlacementForSlot(slot.slotId) !== undefined ? '#8a8' : '#d4b678'
                 )
             }
-            .onClick(() => { this.placeInSlot(slot); })
+            .onClick(() => {
+              if (this.getPlacementForSlot(slot.slotId) !== undefined) {
+                this.fineTuneSlotId = slot.slotId;
+              } else {
+                this.placeInSlot(slot);
+              }
+            })
           }, (slot: ParsedSlot) => slot.slotId)
         }
         .padding({ left: 16, right: 16, top: 4 })
