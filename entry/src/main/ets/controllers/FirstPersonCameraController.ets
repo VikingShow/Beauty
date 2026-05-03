@@ -94,6 +94,11 @@ export class FirstPersonCameraController extends CameraController {
     this.updateListener = callback;
   }
 
+  /** 强制触发一次 apply，用于外部帧循环 */
+  forceApply(): void {
+    this.apply();
+  }
+
   setFocusPoint(p: Vec3): void {
     this.focusPoint = { x: p.x, y: p.y, z: p.z };
   }
