@@ -45,6 +45,18 @@ struct Index {
           .fontColor('#5a5a6a')
           .margin({ top: 28, bottom: 4 })
 
+        Button('Three.js 测试 (WebView)', { type: ButtonType.Capsule })
+          .width(220)
+          .height(40)
+          .fontSize(14)
+          .fontColor('#d4b678')
+          .backgroundColor('#1a1a2e')
+          .borderColor('#d4b678')
+          .borderWidth(1)
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/ThreeJsHost' });
+          })
+
         Button('展厅漫游（白盒）', { type: ButtonType.Capsule })
           .width(220)
           .height(40)

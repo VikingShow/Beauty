@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Three.js Test</title>
+<style>
+  * { margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  canvas { display: block; }
+  #status {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: #d4b678; font-family: sans-serif; font-size: 18px;
+  }
+</style>
+</head>
+<body>
+<div id="status">Loading Three.js...</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+  import * as THREE from 'three';
+
+  document.getElementById('status').textContent = 'WebGL OK - Spinning Cube';
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0a1a);
+
+  const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0, 2, 5);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  document.body.appendChild(renderer.domElement);
+
+  // Light
+  scene.add(new THREE.AmbientLight(0x404040, 2));
+  const dir = new THREE.DirectionalLight(0xd4b678, 3);
+  dir.position.set(5, 10, 5);
+  scene.add(dir);
+
+  // Floor
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(15, 10),
+    new THREE.MeshStandardMaterial({ color: 0xb4b2ae, roughness: 0.3, metalness: 0.1 })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  scene.add(floor);
+
+  // Cube
+  const geo = new THREE.BoxGeometry(1, 1, 1);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xd4b678, roughness: 0.3, metalness: 0.5 });
+  const cube = new THREE.Mesh(geo, mat);
+  cube.position.y = 0.5;
+  scene.add(cube);
+
+  // Grid helper
+  scene.add(new THREE.GridHelper(12, 12, 0x444444, 0x222222));
+
+  function animate() {
+    requestAnimationFrame(animate);
+    cube.rotation.y += 0.01;
+    renderer.render(scene, camera);
+  }
+
+  document.getElementById('status').style.display = 'none';
+  animate();
+</script>
+</body>
+</html>
