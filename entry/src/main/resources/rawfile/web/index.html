@@ -32,133 +32,125 @@
 
   const loaderEl = document.getElementById('loader');
   const errorEl = document.getElementById('error');
+  function log(msg) { errorEl.style.display='block'; errorEl.textContent += msg + '\n'; }
 
-  function showError(msg) {
-    errorEl.style.display = 'block';
-    errorEl.textContent += msg + '\n';
-  }
+  loaderEl.textContent = 'Three.js loaded. Loading scene...';
 
-  loaderEl.textContent = 'Three.js loaded. Creating scene...';
-
-  // Scene
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a0a1a);
-
-  // Camera
-  const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 1.65, 3.5);
-
-  // Renderer
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.shadowMap.enabled = true;
-  document.body.appendChild(renderer.domElement);
-
-  // Lights
-  scene.add(new THREE.AmbientLight(0xffffff, 2));
-  const key = new THREE.DirectionalLight(0xfff5e6, 10);
-  key.position.set(5, 8, 0);
-  scene.add(key);
-  const fill = new THREE.DirectionalLight(0xb3c7f0, 5);
-  fill.position.set(-5, 3, 5);
-  scene.add(fill);
-  const rim = new THREE.DirectionalLight(0xfff5e6, 4);
-  rim.position.set(0, 2, -5);
-  scene.add(rim);
-
-  // FPS controls state
-  const state = {
-    yaw: 0, pitch: 0,
-    moveX: 0, moveY: 0,
-    keys: {}
-  };
-
-  // Load glTF scene using rawfile:// protocol (intercepted by native layer)
-  loaderEl.textContent = 'Loading scene...';
-
-  const loader = new GLTFLoader();
-  // Override fetch to use rawfile:// protocol
-  const origFetch = loader.load.bind(loader);
-
-  loader.load(
-    'rawfile://gltf/white_cube/scene.gltf',
-    (gltf) => {
-      scene.add(gltf.scene);
-      loaderEl.style.display = 'none';
-      loaderEl.textContent = 'Scene loaded!';
-
-      // Traverse and log slot nodes
-      gltf.scene.traverse((node) => {
-        if (node.name && node.name.startsWith('Slot_')) {
-          console.log('Slot found:', node.name, node.position);
-        }
-      });
-
-      animate();
-    },
-    (progress) => {
-      if (progress.total > 0) {
-        loaderEl.textContent = 'Loading: ' + Math.round(progress.loaded / progress.total * 100) + '%';
+  // Use XMLHttpRequest to load glTF (onInterceptRequest intercepts XHR, fetch might not work)
+  function loadFile(url, callback) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function() {
+      if (xhr.status === 200 || xhr.status === 0) {
+        callback(null, new Uint8Array(xhr.response));
+      } else {
+        callback(new Error('HTTP ' + xhr.status));
       }
-    },
-    (error) => {
-      loaderEl.textContent = 'Failed to load scene';
-      showError('GLTF load error: ' + (error.message || error));
+    };
+    xhr.onerror = function() { callback(new Error('XHR error')); };
+    xhr.send();
+  }
+
+  // Load the embedded glTF (textures are base64 data URIs inside the JSON)
+  loadFile('rawfile://gltf/white_cube/scene_embedded.gltf', function(err, data) {
+    if (err) { loaderEl.textContent = 'XHR failed'; log('XHR error: '+err.message); return; }
+    loaderEl.textContent = 'Parsing glTF... (' + (data.length/1024).toFixed(0) + 'KB)';
+
+    const text = new TextDecoder().decode(data);
+    const gltfJson = JSON.parse(text);
+
+    const loader = new GLTFLoader();
+    loader.parse(gltfJson, '', function(gltf) {
+      loaderEl.style.display = 'none';
+      initScene(gltf.scene);
+    }, function(e) {
+      loaderEl.textContent = 'Parse failed';
+      log('GLTF parse: ' + (e.message || e));
+    });
+  });
+
+  function initScene(loadedScene) {
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a1a);
+
+    const camera = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, 0.1, 100);
+    camera.position.set(0, 1.65, 3.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+
+    // Lights (matching original ArkGraphics3D setup)
+    const amb = new THREE.AmbientLight(0xffffff, 2);
+    scene.add(amb);
+    const key = new THREE.DirectionalLight(0xfff5e6, 10);
+    key.position.set(5, 8, 0);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0xb3c7f0, 5);
+    fill.position.set(-5, 3, 5);
+    scene.add(fill);
+    const rim = new THREE.DirectionalLight(0xfff5e6, 4);
+    rim.position.set(0, 2, -5);
+    scene.add(rim);
+
+    scene.add(loadedScene);
+
+    // Slot nodes
+    const slots = [];
+    loadedScene.traverse(function(node) {
+      if (node.name && node.name.startsWith('Slot_')) {
+        slots.push({ name: node.name, pos: node.position.clone() });
+      }
+    });
+    log('Found ' + slots.length + ' slots');
+    slots.forEach(function(s) {
+      log('  ' + s.name + ' @ (' + s.pos.x.toFixed(1) + ',' + s.pos.y.toFixed(1) + ',' + s.pos.z.toFixed(1) + ')');
+    });
+
+    // FPS camera
+    const state = { yaw:0, pitch:0, moveX:0, moveY:0, keys:{} };
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const yaw = state.yaw;
+      const pitch = Math.max(-1.5, Math.min(1.5, state.pitch));
+      const cp = Math.cos(pitch);
+      const sp = Math.sin(pitch);
+      if (state.moveY !== 0 || state.moveX !== 0) {
+        camera.position.x += (-Math.sin(yaw)*state.moveY*0.05 + Math.cos(yaw)*state.moveX*0.04);
+        camera.position.z += (-Math.cos(yaw)*state.moveY*0.05 - Math.sin(yaw)*state.moveX*0.04);
+      }
+      camera.lookAt(camera.position.x + Math.sin(yaw)*cp,
+                    camera.position.y - sp,
+                    camera.position.z - Math.cos(yaw)*cp);
+      renderer.render(scene, camera);
     }
-  );
+    animate();
 
-  function updateCamera() {
-    const yaw = state.yaw;
-    const pitch = Math.max(-1.5, Math.min(1.5, state.pitch));
-    const cp = Math.cos(pitch);
-    camera.position.x += (-Math.sin(yaw) * state.moveY * 0.05 + Math.cos(yaw) * state.moveX * 0.04);
-    camera.position.z += (-Math.cos(yaw) * state.moveY * 0.05 - Math.sin(yaw) * state.moveX * 0.04);
+    // Touch look
+    let dragging = false, lx = 0, ly = 0;
+    renderer.domElement.addEventListener('pointerdown', function(e) { dragging=true; lx=e.clientX; ly=e.clientY; });
+    window.addEventListener('pointerup', function() { dragging=false; });
+    window.addEventListener('pointermove', function(e) {
+      if (!dragging) return;
+      state.yaw -= (e.clientX - lx) * 0.004;
+      state.pitch -= (e.clientY - ly) * 0.004;
+      lx = e.clientX; ly = e.clientY;
+    });
 
-    // Look direction
-    const dx = Math.sin(yaw) * cp;
-    const dy = -Math.sin(pitch);
-    const dz = -Math.cos(yaw) * cp;
-    camera.lookAt(
-      camera.position.x + dx,
-      camera.position.y + dy,
-      camera.position.z + dz
-    );
+    // Keyboard
+    window.addEventListener('keydown', function(e) { state.keys[e.key]=true; });
+    window.addEventListener('keyup', function(e) { state.keys[e.key]=false; });
+    setInterval(function() {
+      state.moveX = 0; state.moveY = 0;
+      if (state.keys['w']||state.keys['ArrowUp']) state.moveY = 1;
+      if (state.keys['s']||state.keys['ArrowDown']) state.moveY = -1;
+      if (state.keys['a']||state.keys['ArrowLeft']) state.moveX = -1;
+      if (state.keys['d']||state.keys['ArrowRight']) state.moveX = 1;
+    }, 16);
   }
-
-  function animate() {
-    requestAnimationFrame(animate);
-    updateCamera();
-    renderer.render(scene, camera);
-  }
-
-  // Mouse/touch look
-  let dragging = false;
-  let lastX = 0, lastY = 0;
-
-  renderer.domElement.addEventListener('pointerdown', (e) => {
-    dragging = true; lastX = e.clientX; lastY = e.clientY;
-  });
-  window.addEventListener('pointerup', () => { dragging = false; });
-  window.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
-    state.yaw -= (e.clientX - lastX) * 0.004;
-    state.pitch -= (e.clientY - lastY) * 0.004;
-    lastX = e.clientX; lastY = e.clientY;
-  });
-
-  // Keyboard
-  window.addEventListener('keydown', (e) => { state.keys[e.key] = true; });
-  window.addEventListener('keyup', (e) => { state.keys[e.key] = false; });
-
-  // Continuous movement from keyboard
-  setInterval(() => {
-    state.moveX = 0; state.moveY = 0;
-    if (state.keys['w'] || state.keys['ArrowUp']) state.moveY = 1;
-    if (state.keys['s'] || state.keys['ArrowDown']) state.moveY = -1;
-    if (state.keys['a'] || state.keys['ArrowLeft']) state.moveX = -1;
-    if (state.keys['d'] || state.keys['ArrowRight']) state.moveX = 1;
-  }, 16);
 </script>
 </body>
 </html>

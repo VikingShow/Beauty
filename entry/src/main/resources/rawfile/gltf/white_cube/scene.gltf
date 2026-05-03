@@ -1,0 +1,537 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "Beauty White Cube Generator"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "WhiteCube"
+    },
+    {
+      "name": "Slot_Painting_North01",
+      "translation": [
+        -4.5,
+        1.55,
+        -5.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "painting",
+        "slotId": "north01",
+        "maxWidth": 1.2,
+        "maxHeight": 0.9,
+        "facing": [
+          0,
+          0,
+          1
+        ],
+        "label": "\u5317\u5899\u5de6"
+      }
+    },
+    {
+      "name": "Slot_Painting_North02",
+      "translation": [
+        0.0,
+        1.55,
+        -5.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "painting",
+        "slotId": "north02",
+        "maxWidth": 1.2,
+        "maxHeight": 0.9,
+        "facing": [
+          0,
+          0,
+          1
+        ],
+        "label": "\u5317\u5899\u4e2d"
+      }
+    },
+    {
+      "name": "Slot_Painting_North03",
+      "translation": [
+        4.5,
+        1.55,
+        -5.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "painting",
+        "slotId": "north03",
+        "maxWidth": 1.2,
+        "maxHeight": 0.9,
+        "facing": [
+          0,
+          0,
+          1
+        ],
+        "label": "\u5317\u5899\u53f3"
+      }
+    },
+    {
+      "name": "Slot_Painting_South01",
+      "translation": [
+        -3.0,
+        1.55,
+        5.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "painting",
+        "slotId": "south01",
+        "maxWidth": 1.2,
+        "maxHeight": 0.9,
+        "facing": [
+          0,
+          0,
+          -1
+        ],
+        "label": "\u5357\u5899\u5de6"
+      }
+    },
+    {
+      "name": "Slot_Painting_South02",
+      "translation": [
+        3.0,
+        1.55,
+        5.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "painting",
+        "slotId": "south02",
+        "maxWidth": 1.2,
+        "maxHeight": 0.9,
+        "facing": [
+          0,
+          0,
+          -1
+        ],
+        "label": "\u5357\u5899\u53f3"
+      }
+    },
+    {
+      "name": "Slot_Painting_East01",
+      "translation": [
+        7.5,
+        1.55,
+        -2.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "painting",
+        "slotId": "east01",
+        "maxWidth": 1.2,
+        "maxHeight": 0.9,
+        "facing": [
+          -1,
+          0,
+          0
+        ],
+        "label": "\u4e1c\u5899\u524d"
+      }
+    },
+    {
+      "name": "Slot_Painting_East02",
+      "translation": [
+        7.5,
+        1.55,
+        2.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "painting",
+        "slotId": "east02",
+        "maxWidth": 1.2,
+        "maxHeight": 0.9,
+        "facing": [
+          -1,
+          0,
+          0
+        ],
+        "label": "\u4e1c\u5899\u540e"
+      }
+    },
+    {
+      "name": "Slot_Painting_West01",
+      "translation": [
+        -7.5,
+        1.55,
+        -2.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "painting",
+        "slotId": "west01",
+        "maxWidth": 1.2,
+        "maxHeight": 0.9,
+        "facing": [
+          1,
+          0,
+          0
+        ],
+        "label": "\u897f\u5899\u524d"
+      }
+    },
+    {
+      "name": "Slot_Painting_West02",
+      "translation": [
+        -7.5,
+        1.55,
+        2.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "painting",
+        "slotId": "west02",
+        "maxWidth": 1.2,
+        "maxHeight": 0.9,
+        "facing": [
+          1,
+          0,
+          0
+        ],
+        "label": "\u897f\u5899\u540e"
+      }
+    },
+    {
+      "name": "Slot_Sculpture_Center",
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "sculpture",
+        "slotId": "center",
+        "maxWidth": 2.0,
+        "maxHeight": 3.0,
+        "facing": [
+          0,
+          0,
+          0
+        ],
+        "label": "\u4e2d\u592e\u96d5\u5851\u4f4d"
+      }
+    },
+    {
+      "name": "Slot_Spawn",
+      "translation": [
+        0.0,
+        1.65,
+        3.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "extras": {
+        "slotType": "spawn",
+        "slotId": "spawn",
+        "maxWidth": 0,
+        "maxHeight": 0,
+        "facing": [
+          0,
+          0,
+          -1
+        ],
+        "label": "\u5165\u53e3"
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "WhiteCubeMesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 4,
+          "material": 1
+        },
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 5,
+          "material": 2
+        },
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 6,
+          "material": 3
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "Floor",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicFactor": 0.1,
+        "roughnessFactor": 0.3
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "Ceiling",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 2
+        },
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "Wall",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 1
+        },
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.85
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "SlotFrame",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.7
+      },
+      "alphaMode": "BLEND",
+      "doubleSided": true
+    }
+  ],
+  "textures": [
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/floor_basecolor.png"
+    },
+    {
+      "uri": "textures/wall_basecolor.png"
+    },
+    {
+      "uri": "textures/ceiling_basecolor.png"
+    },
+    {
+      "uri": "textures/slot_frame.png"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "data:application/octet-stream;base64,AADwwAAAAAAAAKBAAADwQAAAAAAAAKBAAADwQAAAAAAAAKDAAADwwAAAAAAAAKDAAADwwAAAoEAAAKDAAADwQAAAoEAAAKDAAADwQAAAoEAAAKBAAADwwAAAoEAAAKBAAADwwAAAAAAAAKDAAADwQAAAAAAAAKDAAADwQAAAoEAAAKDAAADwwAAAoEAAAKDAAADwQAAAAAAAAKBAAADwwAAAAAAAAKBAAADwwAAAoEAAAKBAAADwQAAAoEAAAKBAAADwQAAAAAAAAKBAAADwQAAAAAAAAKDAAADwQAAAoEAAAKDAAADwQAAAoEAAAKBAAADwwAAAAAAAAKDAAADwwAAAAAAAAKBAAADwwAAAoEAAAKBAAADwwAAAoEAAAKDAMzOjwM3MjD8K15/AMzOjwAAAAEAK15/Ampl5wAAAAEAK15/Ampl5wM3MjD8K15/AmpkZv83MjD8K15/AmpkZvwAAAEAK15/AmpkZPwAAAEAK15/AmpkZP83MjD8K15/Ampl5QM3MjD8K15/Ampl5QAAAAEAK15/AMzOjQAAAAEAK15/AMzOjQM3MjD8K15/AmpkZwM3MjD8K159AmpkZwAAAAEAK159AZmZmwAAAAEAK159AZmZmwM3MjD8K159AZmZmQM3MjD8K159AZmZmQAAAAEAK159AmpkZQAAAAEAK159AmpkZQM3MjD8K159ACtfvQM3MjD9mZkbACtfvQAAAAEBmZkbACtfvQAAAAEAzM/O/CtfvQM3MjD8zM/O/CtfvQM3MjD8zM/M/CtfvQAAAAEAzM/M/CtfvQAAAAEBmZkZACtfvQM3MjD9mZkZACtfvwM3MjD8zM/O/CtfvwAAAAEAzM/O/CtfvwAAAAEBmZkbACtfvwM3MjD9mZkbACtfvwM3MjD9mZkZACtfvwAAAAEBmZkZACtfvwAAAAEAzM/M/CtfvwM3MjD8zM/M/zcxMvwrXozzNzEy/zcxMvwrXozzNzEw/zcxMPwrXozzNzEw/zcxMPwrXozzNzEy/AAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAACBBAAAAAAAAIEFVVdVAAAAAAFVV1UAAAAAAAAAAAAAA8EAAAAAAAADwQAAAoEAAAAAAAACgQAAAAAAAAAAAAADAQAAAAAAAAMBAAAAAQAAAAAAAAABAAAAAAAAAAAAAAMBAAAAAAAAAwEAAAABAAAAAAAAAAEAAAAAAAAAAAAAAgEAAAAAAAACAQAAAAEAAAAAAAAAAQAAAAAAAAAAAAACAQAAAAAAAAIBAAAAAQAAAAAAAAABAAAAAAAAAAAAAAIA/AAAAAAAAgD8AAIA/AAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAgD8AAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIA/AACAPwAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgD8AAIA/AAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAgD8AAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIA/AACAPwAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgD8AAIA/AAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAgD8AAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIA/AACAPwAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgD8AAIA/AAAAAAAAgD8AAAEAAgAAAAIAAwAEAAUABgAEAAYABwAIAAkACgAIAAoACwAMAA0ADgAMAA4ADwAQABEAEgAQABIAEwAUABUAFgAUABYAFwAYABkAGgAYABoAGwAcAB0AHgAcAB4AHwAgACEAIgAgACIAIwAkACUAJgAkACYAJwAoACkAKgAoACoAKwAsAC0ALgAsAC4ALwAwADEAMgAwADIAMwA0ADUANgA0ADYANwA4ADkAOgA4ADoAOwA8AD0APgA8AD4APwA=",
+      "byteLength": 2240
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 768,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 768,
+      "byteLength": 768,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1536,
+      "byteLength": 512,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2048,
+      "byteLength": 192,
+      "target": 34963
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 64,
+      "type": "VEC3",
+      "min": [
+        -7.5,
+        0.0,
+        -5.0
+      ],
+      "max": [
+        7.5,
+        5.0,
+        5.0
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 64,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 64,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 0,
+      "componentType": 5123,
+      "count": 6,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 12,
+      "componentType": 5123,
+      "count": 6,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 24,
+      "componentType": 5123,
+      "count": 24,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 72,
+      "componentType": 5123,
+      "count": 60,
+      "type": "SCALAR"
+    }
+  ]
+}
