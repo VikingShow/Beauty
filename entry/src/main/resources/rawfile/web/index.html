@@ -50,7 +50,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const I=document.getElementById('info');function log(m){I.textContent+=m+'\n'}
 document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault()},{passive:false});
 
-// === ARTWORKS ===
+// Data
 const ARTWORKS=[
   {id:'mona_lisa',title:'蒙娜丽莎',artist:'Leonardo'},
   {id:'starry_night',title:'星月夜',artist:'van Gogh'},
@@ -59,93 +59,108 @@ const ARTWORKS=[
   {id:'creation_of_adam',title:'创造亚当',artist:'Michelangelo'},
   {id:'primavera',title:'春',artist:'Primavera'}
 ];
-function thumb(id){return window.THUMBS&&window.THUMBS[id]?window.THUMBS[id]:''}
-
-// === STATE ===
-let selectedArt=null,placement=0,artworks=[];
 const WALLS=[
   {n:[0,0,1],p:[0,0,-5],min:-7.5,max:7.5},
   {n:[0,0,-1],p:[0,0,5],min:-7.5,max:7.5},
   {n:[-1,0,0],p:[7.5,0,0],min:-5,max:5},
   {n:[1,0,0],p:[-7.5,0,0],min:-5,max:5}
 ];
+function thumb(id){return window.THUMBS&&window.THUMBS[id]?window.THUMBS[id]:''}
+let selectedArt=null,placement=0,artworks=[];
 
-// === SCENE (matching ArkGraphics3D lighting) ===
+// === SCENE: elegant museum lighting ===
 const scene=new THREE.Scene;
-scene.background=new THREE.Color(0xB8C8D4);
+scene.background=new THREE.Color(0xC0C8D4);
+scene.fog=new THREE.Fog(0xC0C8D4,15,50);
+
 const cam=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,100);
 cam.position.set(0,1.65,3.5);
+
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(devicePixelRatio);
-renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+renderer.shadowMap.enabled=true;
 document.body.appendChild(renderer.domElement);
 
-scene.add(new THREE.AmbientLight(0xFFFFFF,3));
-const l1=new THREE.DirectionalLight(0xFFF5E6,14);l1.position.set(5,8,0);scene.add(l1);
-const l2=new THREE.DirectionalLight(0xB3C7F0,6);l2.position.set(-5,3,5);scene.add(l2);
-const l3=new THREE.DirectionalLight(0xFFF5E6,5);l3.position.set(0,2,-5);scene.add(l3);
-const l4=new THREE.DirectionalLight(0xFFFFFF,8);l4.position.set(0,10,0);scene.add(l4);
+// Museum lighting: simulating track lights + skylight diffusion
+// Ambient = soft skylight through ceiling grid
+scene.add(new THREE.AmbientLight(0xF0EDE8,4.5));
+
+// Key = warm track spotlight from right-front ceiling
+const key=new THREE.DirectionalLight(0xFFF8F0,15);
+key.position.set(6,4.5,-2);scene.add(key);
+
+// Fill = cooler reflected light from left wall
+const fill=new THREE.DirectionalLight(0xC8D8F0,5);
+fill.position.set(-4,2.5,3);scene.add(fill);
+
+// Rim = subtle backlight for depth separation
+const rim=new THREE.DirectionalLight(0xFFF5E6,4);
+rim.position.set(0,1.5,-5);scene.add(rim);
 
 // Ghost preview
-const gGeo=new THREE.PlaneGeometry(1.2,0.9);
-const gMat=new THREE.MeshBasicMaterial({color:0xd4b678,transparent:true,opacity:0.3,side:THREE.DoubleSide});
-const ghost=new THREE.Mesh(gGeo,gMat);ghost.visible=false;scene.add(ghost);
+const ghost=new THREE.Mesh(
+  new THREE.PlaneGeometry(1.2,0.9),
+  new THREE.MeshBasicMaterial({color:0xd4b678,transparent:true,opacity:0.3,side:THREE.DoubleSide})
+);ghost.visible=false;scene.add(ghost);
 
-// Player shadow disc
-const shGeo=new THREE.PlaneGeometry(0.5,0.5);
+// Shadow disc
 const shCanvas=document.createElement('canvas');shCanvas.width=64;shCanvas.height=64;
 const shCtx=shCanvas.getContext('2d');
 const grad=shCtx.createRadialGradient(32,32,0,32,32,32);
-grad.addColorStop(0,'rgba(0,0,0,0.35)');grad.addColorStop(0.5,'rgba(0,0,0,0.15)');grad.addColorStop(1,'rgba(0,0,0,0)');
+grad.addColorStop(0,'rgba(0,0,0,0.4)');grad.addColorStop(0.4,'rgba(0,0,0,0.15)');grad.addColorStop(1,'rgba(0,0,0,0)');
 shCtx.fillStyle=grad;shCtx.fillRect(0,0,64,64);
-const shTex=new THREE.CanvasTexture(shCanvas);
-const shMat=new THREE.MeshBasicMaterial({map:shTex,transparent:true,depthWrite:false,side:THREE.DoubleSide});
-const shadowDisc=new THREE.Mesh(shGeo,shMat);shadowDisc.rotation.x=-Math.PI/2;scene.add(shadowDisc);
+const shadowDisc=new THREE.Mesh(
+  new THREE.PlaneGeometry(0.5,0.5),
+  new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(shCanvas),transparent:true,depthWrite:false,side:THREE.DoubleSide})
+);shadowDisc.rotation.x=-Math.PI/2;scene.add(shadowDisc);
 
-// === AUDIO ENGINE ===
+// === AUDIO ===
 let audioCtx=null;
-function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
+function initAudio(){if(!audioCtx)try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}
 function playFootstep(){
   if(!audioCtx)return;const t=audioCtx.currentTime;
-  const noise=audioCtx.createBufferSource();const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*0.1,audioCtx.sampleRate);
-  const data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*0.3;
-  noise.buffer=buf;const bp=audioCtx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1500;bp.Q.value=2;
-  const gain=audioCtx.createGain();gain.gain.setValueAtTime(0.08,t);gain.gain.exponentialRampToValueAtTime(0.001,t+0.08);
-  noise.connect(bp);bp.connect(gain);gain.connect(audioCtx.destination);noise.start(t);noise.stop(t+0.1);
+  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*0.1,audioCtx.sampleRate);
+  const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.25;
+  const n=audioCtx.createBufferSource();n.buffer=buf;
+  const bp=audioCtx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1600;bp.Q.value=1.5;
+  const g=audioCtx.createGain();g.gain.setValueAtTime(0.07,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+  n.connect(bp);bp.connect(g);g.connect(audioCtx.destination);n.start(t);n.stop(t+0.1);
 }
 function playPlace(){
-  if(!audioCtx)return;const t=audioCtx.currentTime;const osc=audioCtx.createOscillator();
-  osc.type='triangle';osc.frequency.setValueAtTime(300,t);osc.frequency.linearRampToValueAtTime(500,t+0.12);
-  const gain=audioCtx.createGain();gain.gain.setValueAtTime(0.15,t);gain.gain.linearRampToValueAtTime(0,t+0.15);
-  osc.connect(gain);gain.connect(audioCtx.destination);osc.start(t);osc.stop(t+0.15);
+  if(!audioCtx)return;const t=audioCtx.currentTime;
+  const o=audioCtx.createOscillator();o.type='triangle';o.frequency.setValueAtTime(330,t);o.frequency.linearRampToValueAtTime(550,t+0.12);
+  const g=audioCtx.createGain();g.gain.setValueAtTime(0.12,t);g.gain.linearRampToValueAtTime(0,t+0.15);
+  o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+0.15);
 }
 
-// === VIRTUAL JOYSTICK ===
+// === JOYSTICK: movement only (forward/back + strafe) ===
 const jc=document.getElementById('joystick'),jctx=jc.getContext('2d');
 const jcx=70,jcy=70,jr=56;let jid=null,jbx=70,jby=70;
 function drawJoy(){jctx.clearRect(0,0,140,140);
   jctx.beginPath();jctx.arc(jcx,jcy,jr,0,6.28);jctx.strokeStyle='rgba(212,182,120,0.35)';jctx.lineWidth=2.5;jctx.stroke();
   jctx.beginPath();jctx.arc(jbx,jby,24,0,6.28);jctx.fillStyle='rgba(212,182,120,0.45)';jctx.fill()}
 drawJoy();
-let joyRaw={x:0,y:0},joyOut={x:0,y:0};
+let joyRaw={x:0,y:0},joyMove={fwd:0,str:0};
 jc.addEventListener('pointerdown',function(e){initAudio();jid=e.pointerId;jc.setPointerCapture(jid)});
 jc.addEventListener('pointermove',function(e){if(e.pointerId!==jid)return;
   const r=jc.getBoundingClientRect(),dx=(e.clientX-r.left)-jcx,dy=(e.clientY-r.top)-jcy;
   const mag=Math.sqrt(dx*dx+dy*dy),clamp=Math.min(mag,jr)/Math.max(mag,0.01);
   jbx=jcx+dx*clamp;jby=jcy+dy*clamp;joyRaw.x=dx/jr;joyRaw.y=dy/jr;drawJoy()});
-jc.addEventListener('pointerup',stopJoy);jc.addEventListener('pointerleave',stopJoy);
-function stopJoy(){jid=null;jbx=jcx;jby=jcy;joyRaw.x=0;joyRaw.y=0;joyOut.x=0;joyOut.y=0;drawJoy()}
+jc.addEventListener('pointerup',endJoy);jc.addEventListener('pointerleave',endJoy);
+function endJoy(){jid=null;jbx=jcx;jby=jcy;joyRaw.x=0;joyRaw.y=0;joyMove.fwd=0;joyMove.str=0;drawJoy()}
 function processJoy(){
-  const raw=Math.sqrt(joyRaw.x*joyRaw.x+joyRaw.y*joyRaw.y);
-  if(raw<0.1){joyOut.x=0;joyOut.y=0;return}
-  const eased=Math.pow(Math.min(raw,1),1.5);
-  joyOut.x=(joyRaw.x/raw)*eased;joyOut.y=(joyRaw.y/raw)*eased;
+  const rx=joyRaw.x,ry=joyRaw.y,mag=Math.sqrt(rx*rx+ry*ry);
+  if(mag<0.1){joyMove.fwd=0;joyMove.str=0;return}
+  const normX=rx/mag,normY=ry/mag,eased=Math.pow(Math.min(mag,1),1.5);
+  joyMove.fwd=-normY*eased*3.0;joyMove.str=-normX*eased*2.0;
 }
 
-// Load scene
+// Load
 new GLTFLoader().parse(JSON.stringify(window.GLTF_DATA),'',function(gltf){scene.add(gltf.scene);start()});
 
 function start(){
+  // Hotbar
   const hb=document.getElementById('hotbar');
   ARTWORKS.forEach(function(a){
     const d=document.createElement('div');d.className='hot-item';
@@ -157,52 +172,63 @@ function start(){
     selectedArt=a;placement=1;document.querySelectorAll('.hot-item').forEach(function(x){x.classList.remove('sel')});d.classList.add('sel');updateUI()}
   function updateUI(){document.getElementById('cross').style.display=placement?'block':'none';document.getElementById('place').style.display=placement&&ghost.visible?'block':'none'}
   document.getElementById('place').onclick=function(){
-    if(!placement||!ghost.visible||!selectedArt)return;const geo=new THREE.PlaneGeometry(1.2,0.9);
+    if(!placement||!ghost.visible||!selectedArt)return;
+    const geo=new THREE.PlaneGeometry(1.2,0.9);
     const mat=new THREE.MeshStandardMaterial({color:0xd4b678,roughness:0.4,side:THREE.DoubleSide});
     const q=new THREE.Mesh(geo,mat);q.position.copy(ghost.position);q.quaternion.copy(ghost.quaternion);
     q.userData={id:selectedArt.id,title:selectedArt.title};scene.add(q);artworks.push(q);playPlace();log('Placed: '+selectedArt.title+' ('+artworks.length+')')};
 
-  const BOUNDS={xMin:-7,xMax:7,zMin:-4.5,zMax:4.5};
-  const st={y:0,p:0,bobY:0,bobX:0,isMoving:false,lastStep:0,stepTimer:0,keys:{}};let lastT=performance.now(),bobPhase=0;
+  // Game loop
+  const BOUNDS={xMin:-6.8,xMax:6.8,zMin:-4.3,zMax:4.3};
+  const st={yaw:0,pitch:0,bobPhase:0,isMoving:false,stepTimer:0,keys:{}};
+  let lastT=performance.now();
 
   function loop(now){
-    requestAnimationFrame(loop);let dt=(now-lastT)/1000;lastT=now;if(dt>0.05)dt=0.05;if(dt<=0)dt=0.016;
+    requestAnimationFrame(loop);
+    let dt=(now-lastT)/1000;lastT=now;if(dt>0.05)dt=0.05;if(dt<=0)dt=0.016;
+
     processJoy();
-    // Joystick-driven rotation (yaw from x-axis for subtle turn while walking)
-    st.y+=(joyOut.x||0)*dt*2.5;
-    st.p+=(joyOut.y||0)*dt*1.2;st.p=Math.max(-1.4,Math.min(1.4,st.p));
-    const cp=Math.cos(st.p),sp=Math.sin(st.p),sy=Math.sin(st.y),cy=Math.cos(st.y);
-    const fwd=joyOut.y*3.0,strafe=-joyOut.x*2.0;
-    // Keyboard
-    let kf=0,ks=0;if(st.keys['w']||st.keys['ArrowUp'])kf=1;if(st.keys['s']||st.keys['ArrowDown'])kf=-1;
+
+    const sinY=Math.sin(st.yaw),cosY=Math.cos(st.yaw),cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);
+
+    // Movement from joystick + keyboard
+    let kf=0,ks=0;
+    if(st.keys['w']||st.keys['ArrowUp'])kf=1;if(st.keys['s']||st.keys['ArrowDown'])kf=-1;
     if(st.keys['a']||st.keys['ArrowLeft'])ks=-1;if(st.keys['d']||st.keys['ArrowRight'])ks=1;
-    const totalFwd=fwd+kf*3,totalStr=strafe+ks*2;
-    const moving=Math.abs(totalFwd)>0.01||Math.abs(totalStr)>0.01;
+    const fwd=joyMove.fwd+kf*3,str=joyMove.str+ks*2;
+    const moving=Math.abs(fwd)>0.01||Math.abs(str)>0.01;
 
-    if(moving){cam.position.x+=(-sy*totalFwd+cy*totalStr)*dt;cam.position.z+=(-cy*totalFwd-sy*totalStr)*dt}
-    // Collision clamp
-    const r=0.3;cam.position.x=Math.max(BOUNDS.xMin+r,Math.min(BOUNDS.xMax-r,cam.position.x));
-    cam.position.z=Math.max(BOUNDS.zMin+r,Math.min(BOUNDS.zMax-r,cam.position.z));
+    // Forward vector: at yaw=0, forward = -Z (facing north)
+    if(moving){
+      cam.position.x+=(sinY*fwd+cosY*str)*dt;
+      cam.position.z+=(-cosY*fwd+sinY*str)*dt;
+    }
+    // Collision
+    const R=0.3;cam.position.x=Math.max(BOUNDS.xMin+R,Math.min(BOUNDS.xMax-R,cam.position.x));
+    cam.position.z=Math.max(BOUNDS.zMin+R,Math.min(BOUNDS.zMax-R,cam.position.z));
 
-    // View bobbing
-    if(moving){bobPhase+=dt*12;st.bobY=Math.sin(bobPhase)*0.015;st.bobX=Math.cos(bobPhase*0.5)*0.005;st.isMoving=true;st.stepTimer+=dt}
-    else{st.bobY+=(0-st.bobY)*0.15;st.bobX+=(0-st.bobX)*0.15;st.isMoving=false;st.stepTimer=0}
+    // Bobbing
+    if(moving){st.bobPhase+=dt*12;st.isMoving=true;st.stepTimer+=dt}
+    else{st.bobPhase+=0;st.isMoving=false;st.stepTimer=0}
+    const bobY=st.isMoving?Math.sin(st.bobPhase)*0.015:0;
+    const bobX=st.isMoving?Math.cos(st.bobPhase*0.5)*0.005:0;
     if(st.stepTimer>0.5){st.stepTimer-=0.5;playFootstep()}
 
-    // Shadow disc
+    // Shadow
     shadowDisc.position.set(cam.position.x,0.02,cam.position.z);
-    if(placement)shadowDisc.material.opacity=0.6;else shadowDisc.material.opacity=0.35;
 
-    // Camera + bob
-    const baseY=1.65+st.bobY,baseX=st.bobX;
-    cam.position.y=baseY;cam.position.x+=baseX;
-    cam.lookAt(cam.position.x+sy*cp,cam.position.y-sp,cam.position.z-cy*cp);
-    cam.position.x-=baseX;cam.position.y=1.65;
+    // Camera
+    const camY=1.65+bobY;
+    cam.position.x+=bobX;cam.position.y=camY;
+    // Look direction: yaw rotates around Y, pitch tilts up/down
+    cam.lookAt(cam.position.x+sinY*cp,cam.position.y-sp,cam.position.z-cosY*cp);
+    cam.position.x-=bobX;cam.position.y=1.65;
 
     // Raycaster ghost
     if(placement){
       const dir=cam.getWorldDirection(new THREE.Vector3);let best=null,bestD=5;
-      WALLS.forEach(function(w){const d=dir.x*w.n[0]+dir.y*w.n[1]+dir.z*w.n[2];if(d>=-0.001)return;
+      WALLS.forEach(function(w){
+        const d=dir.x*w.n[0]+dir.y*w.n[1]+dir.z*w.n[2];if(d>=-0.001)return;
         const t=((w.p[0]-cam.position.x)*w.n[0]+(w.p[1]-cam.position.y)*w.n[1]+(w.p[2]-cam.position.z)*w.n[2])/d;
         if(t>0.01&&t<bestD){const hx=cam.position.x+dir.x*t,hy=cam.position.y+dir.y*t,hz=cam.position.z+dir.z*t;
           if(hy<0.5||hy>4.5)return;const along=w.n[2]!==0?hx:hz;if(along<w.min||along>w.max)return;
@@ -217,14 +243,18 @@ function start(){
   }
   lastT=performance.now();requestAnimationFrame(loop);
 
-  // Touch look (FIXED: right swipe = look right)
+  // Touch look (RIGHT half of screen = look, LEFT joystick = move)
   let drag=0,lx=0,ly=0,pId=null;
   renderer.domElement.addEventListener('pointerdown',function(e){
-    if(e.target===jc||jc.contains(e.target))return;drag=1;lx=e.clientX;ly=e.clientY;pId=e.pointerId});
+    if(e.target===jc||jc.contains(e.target))return;
+    initAudio();drag=1;lx=e.clientX;ly=e.clientY;pId=e.pointerId});
   window.addEventListener('pointerup',function(e){if(e.pointerId===pId){drag=0;pId=null}});
   window.addEventListener('pointermove',function(e){
     if(!drag||e.pointerId!==pId)return;
-    st.y+=(e.clientX-lx)*0.005;st.p-=(e.clientY-ly)*0.005;lx=e.clientX;ly=e.clientY});
+    st.yaw+=(e.clientX-lx)*0.005;
+    st.pitch-=(e.clientY-ly)*0.005;
+    st.pitch=Math.max(-1.4,Math.min(1.4,st.pitch));
+    lx=e.clientX;ly=e.clientY});
   window.addEventListener('keydown',function(e){st.keys[e.key]=1;initAudio()});
   window.addEventListener('keyup',function(e){st.keys[e.key]=0});
 }
