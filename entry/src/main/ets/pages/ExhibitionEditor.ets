@@ -109,24 +109,32 @@ struct ExhibitionEditor {
     return $rawfile('gltf/white_cube/scene.gltf');
   }
 
-  private async loadScene(): Promise<void> {
+  private async loadScene(keepPlacements?: boolean): Promise<void> {
     this.sceneReady = false; this.sceneOpacity = 0; this.loadingOpacity = 1;
-    this.placements = []; this.placementMode = false; this.fps.detach();
+    if (keepPlacements !== true) {
+      this.placements = [];
+    }
+    this.placementMode = false; this.fps.detach();
     this.stopFrameLoop();
 
     // Try sandbox scene first, fall back to rawfile
     let scene: Scene;
+    let source: string = 'rawfile';
     try {
-      if (this.sandboxRegistered && this.sandboxScenePath !== '') {
-        hilog.info(DOMAIN, 'Editor', 'Loading from sandbox: %{public}s', this.sandboxScenePath);
+      if (this.sandboxScenePath !== '') {
+        hilog.info(DOMAIN, 'Editor', 'Trying sandbox: %{public}s', this.sandboxScenePath);
         scene = await Scene.load(this.sandboxScenePath);
+        source = 'sandbox';
       } else {
         scene = await Scene.load(this.getSceneResource());
       }
     } catch (e) {
-      hilog.warn(DOMAIN, 'Editor', 'Sandbox load failed, fallback to rawfile');
+      const err: BusinessError = e as BusinessError;
+      hilog.info(DOMAIN, 'Editor', 'Sandbox load failed: %{public}s, falling back', err.message ?? '');
       scene = await Scene.load(this.getSceneResource());
+      this.sandboxScenePath = ''; // clear so we don't keep failing
     }
+    hilog.info(DOMAIN, 'Editor', 'Scene loaded from: %{public}s', source);
 
     try {
       const factory: SceneResourceFactory = scene.getResourceFactory();
@@ -294,15 +302,12 @@ struct ExhibitionEditor {
       const ac4: GltfAccessor = { bufferView: bvCount+3, componentType: 5123, count: totalNewIndices, type: 'SCALAR' };
       const newACs: GltfAccessor[] = [ac, ac2, ac3, ac4];
 
-      const imgCount: number = gltf.images.length;
-      const texCount: number = gltf.textures.length;
       const matCount: number = gltf.materials.length;
 
-      const newImg: GltfImage = { uri: 'textures/mona_lisa.jpg' };
-      const newTex: GltfTexture = { source: imgCount, sampler: 0 };
+      // Use solid gold color material (no texture dependency for first test)
       const pbrObj: Record<string, Object> = {
-        'baseColorTexture': { 'index': texCount } as Record<string, Object>,
-        'metallicFactor': 0, 'roughnessFactor': 0.5
+        'baseColorFactor': [0.83, 0.72, 0.47, 1.0],  // #d4b678 gold in RGBA
+        'metallicFactor': 0.0, 'roughnessFactor': 0.6
       };
       const newMat: GltfMaterial = {
         name: 'ArtworkPaint', pbrMetallicRoughness: pbrObj, doubleSided: true
@@ -316,8 +321,6 @@ struct ExhibitionEditor {
 
       gltf.bufferViews = gltf.bufferViews.concat(newBVs);
       gltf.accessors = gltf.accessors.concat(newACs);
-      gltf.images = gltf.images.concat([newImg]);
-      gltf.textures = gltf.textures.concat([newTex]);
       gltf.materials = gltf.materials.concat([newMat]);
       gltf.meshes = gltf.meshes.concat([newMesh]);
       gltf.nodes = gltf.nodes.concat([newNode]);
@@ -346,9 +349,10 @@ struct ExhibitionEditor {
 
       const protocol: string = this.sandboxRegistered ? 'sandbox://' : '';
       this.sandboxScenePath = protocol + 'scene_modified.gltf';
-      hilog.info(DOMAIN, 'Editor', 'Scene rebuilt with %{public}d quads', quadCount);
+      hilog.info(DOMAIN, 'Editor', 'Scene rebuilt with %{public}d quads, file size: %{public}d',
+        quadCount, jsonStr.length);
 
-      await this.loadScene();
+      await this.loadScene(true);  // keep placements for future rebuilds
     } catch (e) {
       const err: BusinessError = e as BusinessError;
       hilog.error(DOMAIN, 'Editor', 'rebuild failed: %{public}s', JSON.stringify(e));
