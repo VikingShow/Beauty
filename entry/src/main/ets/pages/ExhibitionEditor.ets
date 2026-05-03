@@ -1,5 +1,4 @@
 import { router } from '@kit.ArkUI';
-import display from '@ohos.display';
 import {
   Scene, SceneResourceFactory, Camera, Light, LightType, SceneNodeParameters
 } from '@kit.ArkGraphics3D';
@@ -56,7 +55,8 @@ struct ExhibitionEditor {
   @State private ghostH: number = 0;
 
   // -- placed artwork overlays --
-  @State private placedRects: string = ''; // JSON array of GhostRect
+  @State private overlayCount: number = 0; // trigger re-render
+  private cachedOverlays: GhostRect[] = [];
 
   // -- UI --
   @State private showScenePicker: boolean = false;
@@ -77,16 +77,6 @@ struct ExhibitionEditor {
   private screenH: number = 1080;
 
   async aboutToAppear(): Promise<void> {
-    // Get real screen dimensions
-    try {
-      const di: display.Display = display.getDefaultDisplaySync();
-      this.screenW = di.width;
-      this.screenH = di.height;
-    } catch (e) {
-      this.screenW = 1920;
-      this.screenH = 1080;
-    }
-
     this.walls = getWallsForScene(this.currentSceneId);
     await this.loadScene();
   }
@@ -227,20 +217,17 @@ struct ExhibitionEditor {
   }
 
   private updatePlacedOverlays(): void {
-    if (this.placements.length === 0) {
-      this.placedRects = '[]';
-      return;
-    }
-    const rects: GhostRect[] = [];
+    this.cachedOverlays = [];
+    if (this.placements.length === 0) return;
     for (const p of this.placements) {
       let wx: number = 0; let wy: number = 0; let wz: number = 0;
       if (p.worldX !== undefined) { wx = p.worldX; wy = p.worldY ?? 0; wz = p.worldZ ?? 0; }
       const g: GhostRect = this.computeGhostAt(wx, wy, wz);
       if (g.w > 0 && g.h > 0) {
-        rects.push(g);
+        this.cachedOverlays.push(g);
       }
     }
-    this.placedRects = JSON.stringify(rects);
+    this.overlayCount = this.cachedOverlays.length;
   }
 
   // ==================== PROJECTION ====================
@@ -352,6 +339,19 @@ struct ExhibitionEditor {
 
   private getAllArtworks(): ArtworkEntry[] { return PRESET_ARTWORKS.concat(this.userArtworks); }
 
+  // Predefined colors for artwork visual distinction in hotbar (like Minecraft item sprites)
+  private artworkColor(id: string): string {
+    if (id === 'mona_lisa') return '#8B7355';
+    if (id === 'starry_night') return '#1a3a5c';
+    if (id === 'birth_of_venus') return '#3a6b7c';
+    if (id === 'school_of_athens') return '#8B5E3C';
+    if (id === 'creation_of_adam') return '#C4956A';
+    if (id === 'primavera') return '#4a6b3a';
+    // uploaded artworks
+    if (id.startsWith('u_') || id.startsWith('user_')) return '#5a5a7a';
+    return '#4a4a5a';
+  }
+
   private getSceneName(): string {
     for (const s of PRESET_SCENES) { if (s.id === this.currentSceneId) return s.name; }
     return '选择场景';
@@ -412,6 +412,10 @@ struct ExhibitionEditor {
         Component3D({ scene: this.sceneInstance })
           .width('100%').height('100%').backgroundColor('#0a0a1a')
           .opacity(this.sceneOpacity)
+          .onAreaChange((oldArea, newArea) => {
+            this.screenW = newArea.width as number;
+            this.screenH = newArea.height as number;
+          })
           .gesture(
             PanGesture({ fingers: 1 })
               .onActionStart(() => { this.fps.onPanStart(); })
@@ -498,47 +502,55 @@ struct ExhibitionEditor {
       Joystick({
         onInput: (x: number, y: number) => { this.fps.setMoveInput(x, y); }
       })
-        .position({ x: 32, y: '100%' }).markAnchor({ x: 0, y: 148 })
+        .position({ x: 32, y: '100%' }).markAnchor({ x: 0, y: 170 })
 
       // --- HOTBAR (centered, Minecraft style) ---
       if (this.showHotbar) {
         Row({ space: 6 }) {
           // upload button
-          Column({ space: 1 }) {
+          Column({ space: 2 }) {
             Row() {
               Text('+').fontSize(16).fontColor('#d4b678')
             }
-            .width(42).height(34)
-            .backgroundColor('#1a1a2e77').borderColor('#d4b67855').borderWidth(1).borderRadius(6)
+            .width(44).height(36)
+            .backgroundColor('#1a1a2e88').borderColor('#d4b67855').borderWidth(1).borderRadius(6)
             .borderStyle(BorderStyle.Dashed)
             .justifyContent(FlexAlign.Center)
+            Text('导入').fontSize(8).fontColor('#8a8a9a')
           }
           .onClick(() => { this.pickAndAddArtwork(); })
 
           ForEach(this.getAllArtworks(), (art: ArtworkEntry) => {
-            Column({ space: 1 }) {
-              Row() {
-                Text(art.titleZh.substring(0, 2))
-                  .fontSize(11)
-                  .fontColor(this.selectedArtworkId === art.id ? '#0a0a1a' : '#d4b678')
-              }
-              .width(42).height(34)
-              .backgroundColor(
-                this.selectedArtworkId === art.id ? '#d4b678' : '#1a1a2e77'
+            Column({ space: 2 }) {
+              // Color swatch (artwork preview)
+              Row() {}
+                .width(44).height(30)
+                .backgroundColor(this.artworkColor(art.id))
+                .borderRadius(4)
+              // Selected indicator border
+              .border({
+                width: this.selectedArtworkId === art.id ? 2 : 0,
+                color: '#d4b678'
+              })
+              // Title
+              Text(
+                art.titleZh.length > 3
+                  ? art.titleZh.substring(0, 3)
+                  : art.titleZh
               )
-              .borderColor(
-                this.selectedArtworkId === art.id ? '#d4b678' : '#4a4a5a44'
-              )
-              .borderWidth(1).borderRadius(6)
-              .justifyContent(FlexAlign.Center)
+                .fontSize(9)
+                .fontColor(
+                  this.selectedArtworkId === art.id ? '#f5e6c8' : '#8a8a9a'
+                )
+                .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis }).width(48)
             }
             .onClick(() => { this.selectArtwork(art); })
           }, (art: ArtworkEntry) => art.id)
         }
-        .padding({ left: 8, right: 8, top: 4, bottom: 6 })
-        .backgroundColor('#1a1a2e55')
+        .padding({ left: 8, right: 8, top: 6, bottom: 6 })
+        .backgroundColor('#1a1a2e66')
         .borderRadius(8)
-        .position({ x: '50%', y: '100%' }).markAnchor({ x: 0, y: 46 })
+        .position({ x: '50%', y: '100%' }).markAnchor({ x: 0, y: 60 })
       }
 
       // --- FINE-TUNE panel ---
@@ -568,35 +580,14 @@ struct ExhibitionEditor {
 
   @Builder
   buildPlacedOverlays() {
-    ForEach(this.placements, (p: Placement) => {
+    ForEach(this.cachedOverlays, (r: GhostRect, i: number) => {
       Column()
-        .width(this.placedW(p)).height(this.placedH(p))
+        .width(r.w).height(r.h)
         .backgroundColor('#10d4b678')
         .border({ width: 1.5, color: '#77d4b678' })
-        .position({ x: this.placedX(p), y: this.placedY(p) })
+        .position({ x: r.x, y: r.y })
         .hitTestBehavior(HitTestMode.Transparent)
-    }, (p: Placement) => p.slotId)
-  }
-
-  private placedW(p: Placement): number {
-    let wx: number = 0; let wy: number = 0; let wz: number = 0;
-    if (p.worldX !== undefined) { wx = p.worldX; wy = p.worldY ?? 0; wz = p.worldZ ?? 0; }
-    return this.computeGhostAt(wx, wy, wz).w;
-  }
-  private placedH(p: Placement): number {
-    let wx: number = 0; let wy: number = 0; let wz: number = 0;
-    if (p.worldX !== undefined) { wx = p.worldX; wy = p.worldY ?? 0; wz = p.worldZ ?? 0; }
-    return this.computeGhostAt(wx, wy, wz).h;
-  }
-  private placedX(p: Placement): number {
-    let wx: number = 0; let wy: number = 0; let wz: number = 0;
-    if (p.worldX !== undefined) { wx = p.worldX; wy = p.worldY ?? 0; wz = p.worldZ ?? 0; }
-    return this.computeGhostAt(wx, wy, wz).x;
-  }
-  private placedY(p: Placement): number {
-    let wx: number = 0; let wy: number = 0; let wz: number = 0;
-    if (p.worldX !== undefined) { wx = p.worldX; wy = p.worldY ?? 0; wz = p.worldZ ?? 0; }
-    return this.computeGhostAt(wx, wy, wz).y;
+    }, (r: GhostRect, i: number) => i.toString())
   }
 
   @Builder
