@@ -1,5 +1,5 @@
 import { router } from '@kit.ArkUI';
-import { display } from '@ohos.display';
+import display from '@ohos.display';
 import {
   Scene, SceneResourceFactory, Camera, Light, LightType, SceneNodeParameters
 } from '@kit.ArkGraphics3D';
@@ -79,7 +79,7 @@ struct ExhibitionEditor {
   async aboutToAppear(): Promise<void> {
     // Get real screen dimensions
     try {
-      const di = display.getDefaultDisplaySync();
+      const di: display.Display = display.getDefaultDisplaySync();
       this.screenW = di.width;
       this.screenH = di.height;
     } catch (e) {
