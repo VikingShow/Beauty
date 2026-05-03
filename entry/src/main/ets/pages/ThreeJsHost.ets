@@ -18,9 +18,9 @@ struct ThreeJsHost {
         .domStorageAccess(true)
         .onInterceptRequest((event: ESObject) => {
           const url: string = event['request']?.['getRequestUrl']?.() as string ?? '';
-          if (!url.startsWith('rawfile://')) { return null; }
+          if (!url.startsWith('http://rawfile.local/')) { return null; }
 
-          const rawPath: string = url.substring('rawfile://'.length);
+          const rawPath: string = url.substring('http://rawfile.local/'.length);
           hilog.info(DOMAIN, 'ThreeJsHost', 'Intercept: %{public}s', rawPath);
 
           try {

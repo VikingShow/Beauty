@@ -53,7 +53,7 @@
   }
 
   // Load the embedded glTF (textures are base64 data URIs inside the JSON)
-  loadFile('rawfile://gltf/white_cube/scene_embedded.gltf', function(err, data) {
+  loadFile('http://rawfile.local/gltf/white_cube/scene_embedded.gltf', function(err, data) {
     if (err) { loaderEl.textContent = 'XHR failed'; log('XHR error: '+err.message); return; }
     loaderEl.textContent = 'Parsing glTF... (' + (data.length/1024).toFixed(0) + 'KB)';
 
