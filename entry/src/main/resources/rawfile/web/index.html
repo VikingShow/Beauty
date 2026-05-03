@@ -70,33 +70,21 @@ let selectedArt=null,placement=0,artworks=[];
 
 // === SCENE: elegant museum lighting ===
 const scene=new THREE.Scene;
-scene.background=new THREE.Color(0xC0C8D4);
-scene.fog=new THREE.Fog(0xC0C8D4,15,50);
+scene.background=new THREE.Color(0x2a2a35);
 
 const cam=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,100);
 cam.position.set(0,1.65,3.5);
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(devicePixelRatio);
-renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
-renderer.shadowMap.enabled=true;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
 document.body.appendChild(renderer.domElement);
 
-// Museum lighting: simulating track lights + skylight diffusion
-// Ambient = soft skylight through ceiling grid
-scene.add(new THREE.AmbientLight(0xF0EDE8,4.5));
-
-// Key = warm track spotlight from right-front ceiling
-const key=new THREE.DirectionalLight(0xFFF8F0,15);
-key.position.set(6,4.5,-2);scene.add(key);
-
-// Fill = cooler reflected light from left wall
-const fill=new THREE.DirectionalLight(0xC8D8F0,5);
-fill.position.set(-4,2.5,3);scene.add(fill);
-
-// Rim = subtle backlight for depth separation
-const rim=new THREE.DirectionalLight(0xFFF5E6,4);
-rim.position.set(0,1.5,-5);scene.add(rim);
+// Balanced gallery lighting
+scene.add(new THREE.AmbientLight(0xD0CCC8,2.5));
+const key=new THREE.DirectionalLight(0xFFF5E6,10);key.position.set(5,6,0);scene.add(key);
+const fill=new THREE.DirectionalLight(0xC0D0F0,5);fill.position.set(-5,3,4);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xFFF0E0,3);rim.position.set(0,2,-5);scene.add(rim);
 
 // Ghost preview
 const ghost=new THREE.Mesh(
@@ -153,7 +141,7 @@ function processJoy(){
   const rx=joyRaw.x,ry=joyRaw.y,mag=Math.sqrt(rx*rx+ry*ry);
   if(mag<0.1){joyMove.fwd=0;joyMove.str=0;return}
   const normX=rx/mag,normY=ry/mag,eased=Math.pow(Math.min(mag,1),1.5);
-  joyMove.fwd=-normY*eased*3.0;joyMove.str=-normX*eased*2.0;
+  joyMove.fwd=-normY*eased*3.0;joyMove.str=normX*eased*2.0;
 }
 
 // Load
