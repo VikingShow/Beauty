@@ -3,6 +3,7 @@
     "pages/Index",
     "pages/GameScene",
     "pages/GalleryScene",
-    "pages/DavidScene"
+    "pages/DavidScene",
+    "pages/ExhibitionEditor"
   ]
 }

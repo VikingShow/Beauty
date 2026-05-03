@@ -45,6 +45,18 @@ struct Index {
           .fontColor('#5a5a6a')
           .margin({ top: 28, bottom: 4 })
 
+        Button('布展模拟器（白立方）', { type: ButtonType.Capsule })
+          .width(220)
+          .height(40)
+          .fontSize(14)
+          .fontColor('#d4b678')
+          .backgroundColor('#1a1a2e')
+          .borderColor('#d4b678')
+          .borderWidth(1)
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/ExhibitionEditor' });
+          })
+
         Button('展厅漫游（白盒）', { type: ButtonType.Capsule })
           .width(220)
           .height(40)
@@ -69,7 +81,7 @@ struct Index {
             router.pushUrl({ url: 'pages/GameScene' });
           })
 
-        Text('v0.2 · Phase 1C')
+        Text('v0.3 · Phase 0 布展模拟器')
           .fontSize(12)
           .fontColor('#4a4a5a')
           .margin({ top: 40 })

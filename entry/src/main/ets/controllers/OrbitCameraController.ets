@@ -62,6 +62,10 @@ export class OrbitCameraController extends CameraController {
     this.apply();
   }
 
+  getYaw(): number { return this.yaw; }
+  getPitch(): number { return this.pitch; }
+  getDistance(): number { return this.distance; }
+
   private apply(): void {
     if (this.camera === undefined) {
       return;

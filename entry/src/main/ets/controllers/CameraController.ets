@@ -18,6 +18,28 @@ export class CameraController {
     this.camera = undefined;
   }
 
+  getPositionX(): number {
+    return this.camera?.position?.x ?? 0;
+  }
+  getPositionY(): number {
+    return this.camera?.position?.y ?? 0;
+  }
+  getPositionZ(): number {
+    return this.camera?.position?.z ?? 0;
+  }
+  getRotationX(): number {
+    return this.camera?.rotation?.x ?? 0;
+  }
+  getRotationY(): number {
+    return this.camera?.rotation?.y ?? 0;
+  }
+  getRotationZ(): number {
+    return this.camera?.rotation?.z ?? 0;
+  }
+  getRotationW(): number {
+    return this.camera?.rotation?.w ?? 1;
+  }
+
   protected onAttached(): void {
     // 子类可重写：初始帧 apply 相机状态
   }
