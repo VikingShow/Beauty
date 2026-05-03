@@ -28,6 +28,12 @@ interface RGBA {
   a: number;
 }
 
+interface ExportData {
+  sceneId: string;
+  exportedAt: string;
+  placements: Placement[];
+}
+
 const DEFAULT_SPAWN: Waypoint = {
   id: 'spawn', name: '入口',
   position: { x: 0, y: 1.65, z: 3.5 },
@@ -814,7 +820,7 @@ struct ExhibitionEditor {
 
   private exportPlacements(): void {
     try {
-      const data = {
+      const data: ExportData = {
         sceneId: 'white_cube',
         exportedAt: new Date().toISOString(),
         placements: this.placements
