@@ -3,78 +3,88 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module Test</title>
+<title>Exhibition Simulator</title>
 <style>
-  *{margin:0;padding:0;}
-  html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;}
-  #status{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-          color:#d4b678;font:18px sans-serif;text-align:center;white-space:pre-line;max-width:90%;}
+  *{margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a}
+  #loader{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+          color:#d4b678;font:18px sans-serif;text-align:center}
+  #info{position:absolute;top:10px;left:10px;color:#6a6;font:11px monospace;white-space:pre-wrap;max-width:90%}
 </style>
 </head>
 <body>
-<div id="status">Test 1: HTML loaded</div>
+<div id="loader">Loading...</div>
+<div id="info"></div>
 
-<!-- Test 1: gltf_data.js regular script -->
 <script src="js/gltf_data.js"></script>
-<script>
-  var S = document.getElementById('status');
-  function ok(m) { S.textContent += '\n' + m; }
-  function fail(m) { S.textContent += '\n' + m; S.style.color = '#ff6b6b'; }
 
-  if (window.GLTF_DATA) ok('Test 2: gltf_data.js OK (' + JSON.stringify(window.GLTF_DATA).length + ' chars)');
-  else fail('Test 2: gltf_data.js FAILED');
-</script>
-
-<!-- Test 2: importmap -->
 <script type="importmap">
-{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+{"imports":{
+  "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
 </script>
 
-<!-- Test 3: ESM import -->
 <script type="module">
-  import * as THREE from 'three';
-  var S = document.getElementById('status');
-  S.textContent += '\nTest 3: THREE imported v' + THREE.REVISION;
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-  // Quick render test: spinning gold cube + white floor
-  var scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a0a1a);
+const L=document.getElementById('loader');
+const I=document.getElementById('info');
+function log(m){I.textContent+=m+'\n';L.textContent=m}
+function err(m){I.textContent+='ERR: '+m+'\n';L.textContent='ERR: '+m;L.style.color='#ff6b6b'}
 
-  var cam = new THREE.PerspectiveCamera(65, window.innerWidth/window.innerHeight, 0.1, 100);
-  cam.position.set(0, 2, 5);
-  cam.lookAt(0, 0, 0);
+log('Parsing glTF...');
+const loader=new GLTFLoader;
+loader.parse(JSON.stringify(window.GLTF_DATA),'',function(gltf){
+  L.style.display='none';
+  log('Scene loaded!');
 
-  var r = new THREE.WebGLRenderer({antialias:true});
-  r.setSize(window.innerWidth, window.innerHeight);
+  const scene=new THREE.Scene;
+  scene.background=new THREE.Color(0x0a0a1a);
+
+  const cam=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,100);
+  cam.position.set(0,1.65,3.5);
+
+  const r=new THREE.WebGLRenderer({antialias:true});
+  r.setSize(innerWidth,innerHeight);
   r.setPixelRatio(devicePixelRatio);
   document.body.appendChild(r.domElement);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 2));
-  var dl = new THREE.DirectionalLight(0xd4b678, 5);
-  dl.position.set(3, 5, 3);
-  scene.add(dl);
+  scene.add(new THREE.AmbientLight(0xffffff,2));
+  const k=new THREE.DirectionalLight(0xfff5e6,10);k.position.set(5,8,0);scene.add(k);
+  const f=new THREE.DirectionalLight(0xb3c7f0,5);f.position.set(-5,3,5);scene.add(f);
+  const ri=new THREE.DirectionalLight(0xfff5e6,4);ri.position.set(0,2,-5);scene.add(ri);
 
-  var floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(15, 10),
-    new THREE.MeshStandardMaterial({color:0xb4b2ae, roughness:0.3})
-  );
-  floor.rotation.x = -Math.PI/2;
-  scene.add(floor);
+  scene.add(gltf.scene);
 
-  var geo = new THREE.BoxGeometry(1, 1, 1);
-  var mat = new THREE.MeshStandardMaterial({color:0xd4b678, roughness:0.3, metalness:0.5});
-  var cube = new THREE.Mesh(geo, mat);
-  cube.position.y = 0.5;
-  scene.add(cube);
+  // Log slots
+  let slotCount=0;
+  gltf.scene.traverse(function(n){if(n.name&&n.name.startsWith('Slot_')){log('Slot: '+n.name);slotCount++}});
+  log('Total slots: '+slotCount);
 
-  function loop() {
+  // FPS state
+  const st={yaw:0,pitch:0,mx:0,my:0,keys:{}};
+
+  function loop(){
     requestAnimationFrame(loop);
-    cube.rotation.y += 0.01;
-    r.render(scene, cam);
+    const cp=Math.cos(st.pitch),sp=Math.sin(st.pitch),sy=Math.sin(st.yaw),cy=Math.cos(st.yaw);
+    if(st.my||st.mx){cam.position.x+=(-sy*st.my*0.05+cy*st.mx*0.04);cam.position.z+=(-cy*st.my*0.05-sy*st.mx*0.04)}
+    cam.lookAt(cam.position.x+sy*cp,cam.position.y-sp,cam.position.z-cy*cp);
+    r.render(scene,cam);
   }
   loop();
 
-  S.style.display = 'none';
+  // Touch
+  let drag=0,lx=0,ly=0;
+  r.domElement.addEventListener('pointerdown',function(e){drag=1;lx=e.clientX;ly=e.clientY});
+  window.addEventListener('pointerup',function(){drag=0});
+  window.addEventListener('pointermove',function(e){if(!drag)return;st.yaw-=(e.clientX-lx)*0.004;st.pitch-=(e.clientY-ly)*0.004;lx=e.clientX;ly=e.clientY});
+  window.addEventListener('keydown',function(e){st.keys[e.key]=1});
+  window.addEventListener('keyup',function(e){st.keys[e.key]=0});
+  setInterval(function(){st.mx=0;st.my=0;if(st.keys['w']||st.keys['ArrowUp'])st.my=1;if(st.keys['s']||st.keys['ArrowDown'])st.my=-1;if(st.keys['a']||st.keys['ArrowLeft'])st.mx=-1;if(st.keys['d']||st.keys['ArrowRight'])st.mx=1},16);
+
+},function(e){err('Parse: '+(e.message||e))});
 </script>
 </body>
 </html>
