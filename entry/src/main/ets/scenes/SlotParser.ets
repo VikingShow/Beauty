@@ -22,6 +22,9 @@ export interface Placement {
   scale: number;
   offsetX: number;
   offsetY: number;
+  worldX?: number;
+  worldY?: number;
+  worldZ?: number;
 }
 
 /** 可选的艺术品条目 */

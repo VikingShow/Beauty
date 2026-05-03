@@ -86,6 +86,10 @@ export class FirstPersonCameraController extends CameraController {
     return this.yaw;
   }
 
+  getPitch(): number {
+    return this.pitch;
+  }
+
   setOnUpdate(callback: () => void): void {
     this.updateListener = callback;
   }
