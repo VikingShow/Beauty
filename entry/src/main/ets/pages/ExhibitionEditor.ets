@@ -30,6 +30,31 @@ interface ExportData { sceneId: string; exportedAt: string; placements: Placemen
 interface ScreenPoint { x: number; y: number; visible: boolean; }
 interface GhostRect { x: number; y: number; w: number; h: number; }
 
+// glTF JSON substructures (minimal fields used in rebuild)
+interface GltfBuffer { uri: string; byteLength: number; }
+interface GltfBufferView { buffer: number; byteOffset: number; byteLength: number; target?: number; }
+interface GltfAccessor { bufferView: number; componentType: number; count: number; type: string; }
+interface GltfPrimitive { attributes: Record<string, number>; indices: number; material: number; }
+interface GltfMesh { name: string; primitives: GltfPrimitive[]; }
+interface GltfNode { mesh?: number; name?: string; translation?: number[]; rotation?: number[]; extras?: Record<string, Object>; }
+interface GltfScene { nodes: number[]; }
+interface GltfImage { uri: string; }
+interface GltfTexture { source: number; sampler: number; }
+interface GltfMaterial { name: string; pbrMetallicRoughness: Record<string, Object>; doubleSided: boolean; alphaMode?: string; }
+interface GltfRoot {
+  asset: Record<string, string>;
+  scene: number;
+  scenes: GltfScene[];
+  nodes: GltfNode[];
+  meshes: GltfMesh[];
+  materials: GltfMaterial[];
+  textures: GltfTexture[];
+  images: GltfImage[];
+  buffers: GltfBuffer[];
+  bufferViews: GltfBufferView[];
+  accessors: GltfAccessor[];
+}
+
 @Entry
 @Component
 struct ExhibitionEditor {
@@ -173,229 +198,174 @@ struct ExhibitionEditor {
       // Register sandbox protocol on first use
       if (!this.sandboxRegistered) {
         const rc = Scene.getDefaultRenderContext();
-        if (rc !== undefined) {
+        if (rc !== undefined && rc !== null) {
           const ok: boolean = rc.registerResourcePath('sandbox', context.filesDir);
-          hilog.info(DOMAIN, 'Editor', 'registerResourcePath sandbox -> %{public}s: %{public}s',
-            context.filesDir, ok ? 'OK' : 'FAIL');
+          hilog.info(DOMAIN, 'Editor', 'registerResourcePath: %{public}s', ok ? 'OK' : 'FAIL');
           this.sandboxRegistered = ok;
         }
       }
 
-      // Read base glTF
+      // Read base glTF as text
       const basePath: string = this.currentSceneId === 'salon_carre'
         ? 'gltf/salon_carre/scene.gltf' : 'gltf/white_cube/scene.gltf';
       const rm = context.resourceManager;
       const rawFd = rm.getRawFdSync(basePath);
-      const rawBytes = new Uint8Array(rawFd.length);
-      fileIo.readSync(rawFd.fd, rawBytes);
-      fileIo.closeSync(rawFd);
+      const fd: number = rawFd.fd;
+      const fileLen: number = rawFd.length;
+      const rawBytes = new Uint8Array(fileLen);
+      fileIo.readSync(fd, rawBytes);
+      fileIo.closeSync(fd);
       const rawText = this.bytesToString(rawBytes);
-      const gltf = JSON.parse(rawText) as Record<string, Object>;
+      const gltf: GltfRoot = JSON.parse(rawText) as GltfRoot;
 
       // Decode base64 buffer
-      const buffers = gltf['buffers'] as Object[];
-      const buf0 = buffers[0] as Record<string, Object>;
-      const b64 = (buf0['uri'] as string).replace('data:application/octet-stream;base64,', '');
-      const binBytes = this.base64Decode(b64);
-      let binLen = binBytes.length;
+      const buf0: GltfBuffer = gltf.buffers[0];
+      const b64: string = buf0.uri.replace('data:application/octet-stream;base64,', '');
+      const binBytes: Uint8Array = this.base64Decode(b64);
+      const binLen: number = binBytes.length;
 
       // Generate painting quads
       const paintings = this.placements.filter(p => p.worldX !== undefined);
-      const quadCount = paintings.length;
-      const vertsPerQuad = 4;
-      const totalNewVerts = quadCount * vertsPerQuad;
-      const totalNewIndices = quadCount * 6; // 2 triangles per quad
+      const quadCount: number = paintings.length;
+      const totalNewVerts: number = quadCount * 4;
+      const totalNewIndices: number = quadCount * 6;
 
-      // Build vertex data: positions(3f) + normals(3f) + uvs(2f) per vertex
+      if (quadCount === 0) return;  // nothing to add
+
       const posData = new Float32Array(totalNewVerts * 3);
       const normData = new Float32Array(totalNewVerts * 3);
       const uvData = new Float32Array(totalNewVerts * 2);
       const idxData = new Uint16Array(totalNewIndices);
-
       const uvPattern = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
 
       for (let qi = 0; qi < quadCount; qi++) {
         const p = paintings[qi];
-        const wx = p.worldX!; const wy = p.worldY!; const wz = p.worldZ!;
-        const hw = PAINTING_W / 2; const hh = PAINTING_H / 2;
-
-        // Determine wall normal from position
-        let nx = 0; let nz = 0;
-        if (Math.abs(wz + 5.0) < 0.1) { nx = 0; nz = 1; }        // North wall
-        else if (Math.abs(wz - 5.0) < 0.1) { nx = 0; nz = -1; }   // South wall
-        else if (Math.abs(wx - 7.5) < 0.1) { nx = -1; nz = 0; }   // East wall
-        else if (Math.abs(wx + 7.5) < 0.1) { nx = 1; nz = 0; }    // West wall
-
-        // Right direction along wall
-        const rx = nz; const rz = -nx;
-        const epsilon = 0.01;
-        const ox = wx + nx * epsilon;
-        const oz = wz + nz * epsilon;
-
-        const vi = qi * 4;
-        // bl
-        posData[(vi + 0) * 3 + 0] = ox + rx * (-hw); posData[(vi + 0) * 3 + 1] = wy - hh; posData[(vi + 0) * 3 + 2] = oz + rz * (-hw);
-        // tl
-        posData[(vi + 1) * 3 + 0] = ox + rx * (-hw); posData[(vi + 1) * 3 + 1] = wy + hh; posData[(vi + 1) * 3 + 2] = oz + rz * (-hw);
-        // tr
-        posData[(vi + 2) * 3 + 0] = ox + rx * (hw);  posData[(vi + 2) * 3 + 1] = wy + hh; posData[(vi + 2) * 3 + 2] = oz + rz * (hw);
-        // br
-        posData[(vi + 3) * 3 + 0] = ox + rx * (hw);  posData[(vi + 3) * 3 + 1] = wy - hh; posData[(vi + 3) * 3 + 2] = oz + rz * (hw);
-
+        const wx: number = p.worldX!; const wy: number = p.worldY!; const wz: number = p.worldZ!;
+        const hw: number = PAINTING_W / 2; const hh: number = PAINTING_H / 2;
+        let nx: number = 0; let nz: number = 0;
+        if (Math.abs(wz + 5.0) < 0.1) { nx = 0; nz = 1; }
+        else if (Math.abs(wz - 5.0) < 0.1) { nx = 0; nz = -1; }
+        else if (Math.abs(wx - 7.5) < 0.1) { nx = -1; nz = 0; }
+        else if (Math.abs(wx + 7.5) < 0.1) { nx = 1; nz = 0; }
+        const rxx: number = nz; const rz: number = -nx;
+        const epsilon: number = 0.01;
+        const ox: number = wx + nx * epsilon;
+        const oz: number = wz + nz * epsilon;
+        const vi: number = qi * 4;
+        posData[(vi+0)*3+0]=ox+rxx*(-hw); posData[(vi+0)*3+1]=wy-hh; posData[(vi+0)*3+2]=oz+rz*(-hw);
+        posData[(vi+1)*3+0]=ox+rxx*(-hw); posData[(vi+1)*3+1]=wy+hh; posData[(vi+1)*3+2]=oz+rz*(-hw);
+        posData[(vi+2)*3+0]=ox+rxx*(hw);  posData[(vi+2)*3+1]=wy+hh; posData[(vi+2)*3+2]=oz+rz*(hw);
+        posData[(vi+3)*3+0]=ox+rxx*(hw);  posData[(vi+3)*3+1]=wy-hh; posData[(vi+3)*3+2]=oz+rz*(hw);
         for (let v = 0; v < 4; v++) {
-          normData[(vi + v) * 3 + 0] = nx;
-          normData[(vi + v) * 3 + 1] = 0;
-          normData[(vi + v) * 3 + 2] = nz;
-          uvData[(vi + v) * 2 + 0] = uvPattern[v * 2];
-          uvData[(vi + v) * 2 + 1] = uvPattern[v * 2 + 1];
+          normData[(vi+v)*3+0]=nx; normData[(vi+v)*3+1]=0; normData[(vi+v)*3+2]=nz;
+          uvData[(vi+v)*2+0]=uvPattern[v*2]; uvData[(vi+v)*2+1]=uvPattern[v*2+1];
         }
-
-        const ii = qi * 6;
-        const base = vi;
-        idxData[ii + 0] = base; idxData[ii + 1] = base + 1; idxData[ii + 2] = base + 2;
-        idxData[ii + 3] = base; idxData[ii + 4] = base + 2; idxData[ii + 5] = base + 3;
+        const ii: number = qi * 6;
+        idxData[ii+0]=vi; idxData[ii+1]=vi+1; idxData[ii+2]=vi+2;
+        idxData[ii+3]=vi; idxData[ii+4]=vi+2; idxData[ii+5]=vi+3;
       }
 
-      // Convert to Uint8
       const posBytes = new Uint8Array(posData.buffer);
       const normBytes = new Uint8Array(normData.buffer);
       const uvBytes = new Uint8Array(uvData.buffer);
       const idxBytes = new Uint8Array(idxData.buffer);
+      const posP = this.padTo4(posBytes); const normP = this.padTo4(normBytes);
+      const uvP = this.padTo4(uvBytes); const idxP = this.padTo4(idxBytes);
 
-      // Pad to 4 bytes
-      const pad4 = (arr: Uint8Array): Uint8Array => {
-        const rem = arr.length % 4;
-        if (rem === 0) return arr;
-        const padded = new Uint8Array(arr.length + (4 - rem));
-        padded.set(arr);
-        return padded;
+      const bvCount: number = gltf.bufferViews.length;
+      const acCount: number = gltf.accessors.length;
+      const off1: number = binLen + posP.length;
+      const off2: number = off1 + normP.length;
+      const off3: number = off2 + uvP.length;
+
+      const newBVs: GltfBufferView[] = [];
+      const bv: GltfBufferView = { buffer: 0, byteOffset: binLen, byteLength: posP.length, target: 34962 };
+      newBVs.push(bv);
+      const bv2: GltfBufferView = { buffer: 0, byteOffset: off1, byteLength: normP.length, target: 34962 };
+      newBVs.push(bv2);
+      const bv3: GltfBufferView = { buffer: 0, byteOffset: off2, byteLength: uvP.length, target: 34962 };
+      newBVs.push(bv3);
+      const bv4: GltfBufferView = { buffer: 0, byteOffset: off3, byteLength: idxP.length, target: 34963 };
+      newBVs.push(bv4);
+
+      const ac: GltfAccessor = { bufferView: bvCount, componentType: 5126, count: totalNewVerts, type: 'VEC3' };
+      const ac2: GltfAccessor = { bufferView: bvCount+1, componentType: 5126, count: totalNewVerts, type: 'VEC3' };
+      const ac3: GltfAccessor = { bufferView: bvCount+2, componentType: 5126, count: totalNewVerts, type: 'VEC2' };
+      const ac4: GltfAccessor = { bufferView: bvCount+3, componentType: 5123, count: totalNewIndices, type: 'SCALAR' };
+      const newACs: GltfAccessor[] = [ac, ac2, ac3, ac4];
+
+      const imgCount: number = gltf.images.length;
+      const texCount: number = gltf.textures.length;
+      const matCount: number = gltf.materials.length;
+
+      const newImg: GltfImage = { uri: 'textures/mona_lisa.jpg' };
+      const newTex: GltfTexture = { source: imgCount, sampler: 0 };
+      const pbrObj: Record<string, Object> = {
+        'baseColorTexture': { 'index': texCount } as Record<string, Object>,
+        'metallicFactor': 0, 'roughnessFactor': 0.5
       };
-      const posP = pad4(posBytes); const normP = pad4(normBytes);
-      const uvP = pad4(uvBytes); const idxP = pad4(idxBytes);
-
-      // Current bufferView count
-      const bvCount = (gltf['bufferViews'] as Object[]).length;
-      const acCount = (gltf['accessors'] as Object[]).length;
-
-      // Add new bufferViews
-      const bvPos = bvCount; const bvNorm = bvCount + 1;
-      const bvUV = bvCount + 2; const bvIdx = bvCount + 3;
-      const newBVs: Object[] = [
-        { buffer: 0, byteOffset: binLen, byteLength: posP.length, target: 34962 },
-        { buffer: 0, byteOffset: binLen + posP.length, byteLength: normP.length, target: 34962 },
-        { buffer: 0, byteOffset: binLen + posP.length + normP.length, byteLength: uvP.length, target: 34962 },
-        { buffer: 0, byteOffset: binLen + posP.length + normP.length + uvP.length, byteLength: idxP.length, target: 34963 }
-      ];
-
-      // Add new accessors
-      const acPos = acCount; const acNorm = acCount + 1;
-      const acUV = acCount + 2; const acIdx = acCount + 3;
-      const newACs: Object[] = [
-        { bufferView: bvPos, componentType: 5126, count: totalNewVerts, type: 'VEC3' },
-        { bufferView: bvNorm, componentType: 5126, count: totalNewVerts, type: 'VEC3' },
-        { bufferView: bvUV, componentType: 5126, count: totalNewVerts, type: 'VEC2' },
-        { bufferView: bvIdx, componentType: 5123, count: totalNewIndices, type: 'SCALAR' }
-      ];
-
-      // Copy artwork textures to sandbox and add image/texture/material entries
-      const imgCount = (gltf['images'] as Object[]).length;
-      const texCount = (gltf['textures'] as Object[]).length;
-      // Use fallback texture (first painting) for all placed artworks
-      // In production, each artwork would use its own texture
-      let fallbackTexIdx = 0;
-
-      // Add a default painting texture reference (use mona_lisa.jpg as fallback)
-      const paintTexDir = context.filesDir + '/textures/';
-      // Ensure directory exists (fileIo.mkdir may not exist, skip for now)
-
-      const newImgIdx = imgCount;
-      const newTexIdx = texCount;
-      const newMatIdx = (gltf['materials'] as Object[]).length;
-
-      const newImgs: Object[] = [{ uri: 'textures/mona_lisa.jpg' }];
-      const newTexs: Object[] = [{ source: newImgIdx, sampler: 0 }];
-      const newMats: Object[] = [{
-        name: 'ArtworkPaint',
-        pbrMetallicRoughness: { baseColorTexture: { index: newTexIdx }, metallicFactor: 0, roughnessFactor: 0.5 },
-        doubleSided: true
-      }];
-
-      // Add mesh (one primitive for all quads)
-      const meshCount = (gltf['meshes'] as Object[]).length;
-      const newMesh: Object = {
-        name: 'PlacedArtworks',
-        primitives: [{
-          attributes: { POSITION: acPos, NORMAL: acNorm, TEXCOORD_0: acUV },
-          indices: acIdx,
-          material: newMatIdx
-        }]
+      const newMat: GltfMaterial = {
+        name: 'ArtworkPaint', pbrMetallicRoughness: pbrObj, doubleSided: true
       };
+      const attrObj: Record<string, number> = {
+        'POSITION': acCount, 'NORMAL': acCount+1, 'TEXCOORD_0': acCount+2
+      };
+      const prim: GltfPrimitive = { attributes: attrObj, indices: acCount+3, material: matCount };
+      const newMesh: GltfMesh = { name: 'PlacedArtworks', primitives: [prim] };
+      const newNode: GltfNode = { mesh: gltf.meshes.length, name: 'PlacedArtworksNode' };
 
-      // Add node
-      const nodeCount = (gltf['nodes'] as Object[]).length;
-      const newNode: Object = { mesh: meshCount, name: 'PlacedArtworksNode' };
-
-      // Update glTF
-      const bvArr = (gltf['bufferViews'] as Object[]).concat(newBVs);
-      const acArr = (gltf['accessors'] as Object[]).concat(newACs);
-      const imgArr = (gltf['images'] as Object[]).concat(newImgs);
-      const texArr = (gltf['textures'] as Object[]).concat(newTexs);
-      const matArr = (gltf['materials'] as Object[]).concat(newMats);
-      const meshArr = (gltf['meshes'] as Object[]).concat([newMesh]);
-      const nodeArr = (gltf['nodes'] as Object[]).concat([newNode]);
-      gltf['bufferViews'] = bvArr;
-      gltf['accessors'] = acArr;
-      gltf['images'] = imgArr;
-      gltf['textures'] = texArr;
-      gltf['materials'] = matArr;
-      gltf['meshes'] = meshArr;
-      gltf['nodes'] = nodeArr;
-      const scenes = gltf['scenes'] as Object[];
-      const scene0 = scenes[0] as Record<string, Object>;
-      const sceneNodes = scene0['nodes'] as number[];
-      sceneNodes.push(nodeCount);
-      scene0['nodes'] = sceneNodes;
-      scenes[0] = scene0;
-      gltf['scenes'] = scenes;
+      gltf.bufferViews = gltf.bufferViews.concat(newBVs);
+      gltf.accessors = gltf.accessors.concat(newACs);
+      gltf.images = gltf.images.concat([newImg]);
+      gltf.textures = gltf.textures.concat([newTex]);
+      gltf.materials = gltf.materials.concat([newMat]);
+      gltf.meshes = gltf.meshes.concat([newMesh]);
+      gltf.nodes = gltf.nodes.concat([newNode]);
+      gltf.scenes[0].nodes.push(gltf.nodes.length - 1);
 
       // Re-encode buffer
       const newBin = new Uint8Array(binLen + posP.length + normP.length + uvP.length + idxP.length);
       newBin.set(binBytes, 0);
       newBin.set(posP, binLen);
-      newBin.set(normP, binLen + posP.length);
-      newBin.set(uvP, binLen + posP.length + normP.length);
-      newBin.set(idxP, binLen + posP.length + normP.length + uvP.length);
-      const newB64 = this.base64Encode(newBin);
-      buf0['uri'] = 'data:application/octet-stream;base64,' + newB64;
-      buf0['byteLength'] = newBin.length;
-      buffers[0] = buf0;
-      gltf['buffers'] = buffers;
+      newBin.set(normP, off1);
+      newBin.set(uvP, off2);
+      newBin.set(idxP, off3);
+      const newB64: string = this.base64Encode(newBin);
+      gltf.buffers[0] = {
+        uri: 'data:application/octet-stream;base64,' + newB64,
+        byteLength: newBin.length
+      };
 
       // Write to sandbox
-      const sandboxPath = context.filesDir + '/scene_modified.gltf';
-      const jsonStr = JSON.stringify(gltf);
-      const file = fileIo.openSync(sandboxPath,
+      const sandboxPath: string = context.filesDir + '/scene_modified.gltf';
+      const jsonStr: string = JSON.stringify(gltf);
+      const file: fileIo.File = fileIo.openSync(sandboxPath,
         fileIo.OpenMode.CREATE | fileIo.OpenMode.WRITE_ONLY | fileIo.OpenMode.TRUNC);
       fileIo.writeSync(file.fd, jsonStr);
-      fileIo.closeSync(file);
+      fileIo.closeSync(file.fd);
 
-      // Set sandbox path for reload
-      const protocol = this.sandboxRegistered ? 'sandbox://' : '';
+      const protocol: string = this.sandboxRegistered ? 'sandbox://' : '';
       this.sandboxScenePath = protocol + 'scene_modified.gltf';
-      hilog.info(DOMAIN, 'Editor', 'Scene rebuilt with %{public}d quads at: %{public}s',
-        quadCount, sandboxPath);
+      hilog.info(DOMAIN, 'Editor', 'Scene rebuilt with %{public}d quads', quadCount);
 
-      // Reload scene
       await this.loadScene();
     } catch (e) {
-      const err = e as BusinessError;
+      const err: BusinessError = e as BusinessError;
       hilog.error(DOMAIN, 'Editor', 'rebuild failed: %{public}s', JSON.stringify(e));
       this.errorMsg = '沙箱场景重建失败: ' + (err.message ?? '');
     }
   }
 
+  private padTo4(arr: Uint8Array): Uint8Array {
+    const rem: number = arr.length % 4;
+    if (rem === 0) return arr;
+    const padded = new Uint8Array(arr.length + (4 - rem));
+    padded.set(arr);
+    return padded;
+  }
+
   private bytesToString(bytes: Uint8Array): string {
-    let str = '';
+    let str: string = '';
     for (let i = 0; i < bytes.length; i++) {
       str += String.fromCharCode(bytes[i]);
     }
