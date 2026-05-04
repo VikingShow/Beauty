@@ -150,28 +150,17 @@ function updateDayCycle(dt){
   sun.position.set(Math.cos(elev)*Math.sin(az)*dist, Math.sin(elev)*dist, Math.cos(elev)*Math.cos(az)*dist);
 }
 
-// Time UI controls
+// Time UI controls (deferred until DOM is ready)
 let dayPaused=false,savedSpeed=daySpeed;
-const tLabel=document.getElementById('tLabel');
 function timeLabel(){
+  const el=document.getElementById('tLabel');if(!el)return;
   const h=Math.floor(dayTime*24),m=Math.floor((dayTime*24-h)*60);
   const str=h.toString().padStart(2,'0')+':'+m.toString().padStart(2,'0');
-  if(h<6||h>=22)tLabel.textContent='Night '+str;
-  else if(h<10)tLabel.textContent='Dawn '+str;
-  else if(h<17)tLabel.textContent='Day '+str;
-  else tLabel.textContent='Dusk '+str;
+  if(h<6||h>=22)el.textContent='Night '+str;
+  else if(h<10)el.textContent='Dawn '+str;
+  else if(h<17)el.textContent='Day '+str;
+  else el.textContent='Dusk '+str;
 }
-document.getElementById('tSlower').onclick=function(){daySpeed=Math.max(0.003,daySpeed/2)};
-document.getElementById('tPause').onclick=function(){
-  dayPaused=!dayPaused;
-  if(dayPaused){savedSpeed=daySpeed;daySpeed=0}
-  else{daySpeed=savedSpeed}
-};
-document.getElementById('tFaster').onclick=function(){daySpeed=Math.min(1,daySpeed*2)};
-
-// Monkey-patch updateDayCycle to include time label
-const _updateDayCycle=updateDayCycle;
-updateDayCycle=function(dt){_updateDayCycle(dt);timeLabel()};
 
 // Ghost preview
 const ghost=new THREE.Mesh(
@@ -287,6 +276,15 @@ let started=false;
 loadSceneData('white_cube');
 
 function start(){
+  // Init dayTime from real clock (0-1 mapping of 24h day)
+  const realH=new Date().getHours()+new Date().getMinutes()/60;
+  dayTime=realH/24;
+  // Time UI button bindings
+  const tSlower=document.getElementById('tSlower'),tPause=document.getElementById('tPause'),tFaster=document.getElementById('tFaster');
+  if(tSlower)tSlower.onclick=function(){daySpeed=Math.max(0.003,daySpeed/2)};
+  if(tPause)tPause.onclick=function(){dayPaused=!dayPaused;if(dayPaused){savedSpeed=daySpeed;daySpeed=0}else{daySpeed=savedSpeed}};
+  if(tFaster)tFaster.onclick=function(){daySpeed=Math.min(1,daySpeed*2)};
+
   // Hotbar
   const hb=document.getElementById('hotbar');
   ARTWORKS.forEach(function(a){
@@ -370,7 +368,7 @@ function start(){
   function loop(now){
     requestAnimationFrame(loop);
     let dt=(now-lastT)/1000;lastT=now;if(dt>0.05)dt=0.05;if(dt<=0)dt=0.016;
-    updateDayCycle(dt);
+    updateDayCycle(dt);timeLabel();
 
     processJoy();
 
