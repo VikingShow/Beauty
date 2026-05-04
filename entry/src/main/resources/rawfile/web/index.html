@@ -243,27 +243,31 @@ const SCENE_CONFIG={
 };
 
 function loadSceneData(id){
-  // Clear old scene objects (glTF root + placed artworks)
   if(gltfRoot)scene.remove(gltfRoot);
   artworks.forEach(function(q){scene.remove(q)});
   artworks=[];slots3D=[];selectedMesh=null;hideTune();placement=0;
-  currentScene=id;const data=id==='salon_carre'?window.GLTF_SALON_CARRE:window.GLTF_DATA;
+  currentScene=id;
+  const raw=id==='salon_carre'?window.GLTF_SALON_CARRE:window.GLTF_DATA;
+  if(!raw){log('ERROR: glTF data not loaded for '+id);return}
   document.querySelectorAll('#sceneSel button').forEach(function(b){b.classList.toggle('on',b.dataset.scene===id)});
 
-  new GLTFLoader().parse(JSON.stringify(data),'',function(gltf){
-    gltfRoot=gltf.scene;scene.add(gltfRoot);
-    gltf.scene.traverse(function(n){
-      if(n.name&&n.name.startsWith('Slot_Painting_')){
-        const wp=new THREE.Vector3;n.getWorldPosition(wp);
-        slots3D.push({name:n.name,pos:wp.clone(),w:1.2,h:0.9});
-      }
-    });
-    log('Scene: '+id+' - '+slots3D.length+' slots');
-    const cfg=SCENE_CONFIG[id]||SCENE_CONFIG.white_cube;
-    WALLS.length=0;cfg.walls.forEach(function(w){WALLS.push(w)});
-    Object.assign(BOUNDS,cfg.bounds);
-    if(!started){started=true;start()}
-  });
+  try{
+    const data=JSON.stringify(raw);
+    new GLTFLoader().parse(data,'',function(gltf){
+      gltfRoot=gltf.scene;scene.add(gltfRoot);
+      gltf.scene.traverse(function(n){
+        if(n.name&&n.name.startsWith('Slot_Painting_')){
+          const wp=new THREE.Vector3;n.getWorldPosition(wp);
+          slots3D.push({name:n.name,pos:wp.clone(),w:1.2,h:0.9});
+        }
+      });
+      log('Scene: '+id+' - '+slots3D.length+' slots');
+      const cfg=SCENE_CONFIG[id]||SCENE_CONFIG.white_cube;
+      WALLS.length=0;cfg.walls.forEach(function(w){WALLS.push(w)});
+      Object.assign(BOUNDS,cfg.bounds);
+      if(!started){started=true;start()}
+    },function(e){log('GLTF parse error: '+(e.message||e))});
+  }catch(e){log('Load error: '+(e.message||e))}
 }
 
 // Scene selector buttons
