@@ -26,6 +26,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;font-family:
   font-size:16px;font-weight:bold;cursor:pointer}
 #info{position:fixed;top:10px;left:10px;color:#6a6;font:10px monospace;white-space:pre-wrap;z-index:10;max-width:50%;pointer-events:none}
 #joystick{position:fixed;left:28px;bottom:100px;z-index:10;opacity:0.6;pointer-events:auto;touch-action:none}
+#tune{position:fixed;z-index:15;display:none;background:rgba(26,26,46,0.92);border:1px solid #d4b678;border-radius:10px;
+  padding:10px 14px;min-width:180px;text-align:center}
+#tune .title{color:#f5e6c8;font-size:13px;font-weight:bold;margin-bottom:8px}
+#tune .row{display:flex;align-items:center;justify-content:center;gap:6px;margin:4px 0}
+#tune .row span{color:#8a8a9a;font-size:11px;width:30px}
+#tune button{background:rgba(30,30,50,0.8);border:1px solid rgba(212,182,120,0.4);color:#d4b678;border-radius:6px;
+  padding:4px 10px;font-size:12px;cursor:pointer}
+#tune button.del{color:#ff6b6b;border-color:rgba(255,100,100,0.4)}
+#tune button.done{background:#d4b678;color:#0a0a1a;border-color:#d4b678;padding:6px 16px;font-weight:bold}
 </style>
 </head>
 <body>
@@ -34,6 +43,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;font-family:
 <div id="cross">＋</div>
 <button id="place">放置</button>
 <div id="info"></div>
+<div id="tune"><div class="title"></div><div class="row"><span>水平</span><button>-1cm</button><button>+1cm</button></div><div class="row"><span>垂直</span><button>-1cm</button><button>+1cm</button></div><div class="row"><span>缩放</span><button>-10%</button><button>+10%</button></div><div class="row"><button class="del">移除</button><button class="done">完成</button></div></div>
 <canvas id="joystick" width="140" height="140"></canvas>
 
 <script src="js/gltf_data.js"></script>
@@ -203,6 +213,47 @@ function start(){
     q.position.copy(ghost.position);q.quaternion.copy(ghost.quaternion);
     q.userData={id:selectedArt.id,title:selectedArt.title};
     scene.add(q);artworks.push(q);playPlace();log('Placed: '+selectedArt.title+' ('+artworks.length+')')};
+
+  // === FINE-TUNE: select placed artwork via raycaster ===
+  const tuneRay=new THREE.Raycaster;tuneRay.far=10;
+  let selectedMesh=null,tune=document.getElementById('tune');
+  const tuneTitle=tune.querySelector('.title');
+  const tuneBtns=tune.querySelectorAll('button');
+
+  function hideTune(){selectedMesh=null;tune.style.display='none'}
+  // Tune button bindings: -1cm H, +1cm H, -1cm V, +1cm V, -10%, +10%, remove, done
+  tuneBtns[0].onclick=function(){if(selectedMesh)nudgeMesh(selectedMesh,-0.01,0)};
+  tuneBtns[1].onclick=function(){if(selectedMesh)nudgeMesh(selectedMesh,0.01,0)};
+  tuneBtns[2].onclick=function(){if(selectedMesh)nudgeMesh(selectedMesh,0,-0.01)};
+  tuneBtns[3].onclick=function(){if(selectedMesh)nudgeMesh(selectedMesh,0,0.01)};
+  tuneBtns[4].onclick=function(){if(selectedMesh)scaleMesh(selectedMesh,0.9)};
+  tuneBtns[5].onclick=function(){if(selectedMesh)scaleMesh(selectedMesh,1.1)};
+  tuneBtns[6].onclick=function(){if(selectedMesh){scene.remove(selectedMesh);artworks=artworks.filter(function(x){return x!==selectedMesh});hideTune()}};
+  tuneBtns[7].onclick=hideTune;
+
+  function nudgeMesh(m,dx,dy){
+    const n=new THREE.Vector3(0,0,1);n.applyQuaternion(m.quaternion).normalize();
+    m.position.x+=n.x*dx+n.z*dy;m.position.y+=dy;
+    updateTunePos(m);
+  }
+  function scaleMesh(m,factor){m.scale.multiplyScalar(factor);updateTunePos(m)}
+  function updateTunePos(m){
+    const v=new THREE.Vector3;m.getWorldPosition(v);
+    v.project(cam);const sx=(v.x*0.5+0.5)*innerWidth,sy=(-v.y*0.5+0.5)*innerHeight;
+    tune.style.left=Math.min(sx+30,innerWidth-200)+'px';
+    tune.style.top=Math.max(sy-60,10)+'px';
+    tuneTitle.textContent=m.userData?.title||'画作';
+  }
+
+  // Click to select placed artwork
+  renderer.domElement.addEventListener('click',function(e){
+    if(placement||drag)return; // don't select while placing or rotating
+    const mx=(e.clientX/innerWidth)*2-1,my=-(e.clientY/innerHeight)*2+1;
+    tuneRay.setFromCamera(new THREE.Vector2(mx,my),cam);
+    const hits=tuneRay.intersectObjects(artworks);
+    if(hits.length>0){selectedMesh=hits[0].object;updateTunePos(selectedMesh);tune.style.display='block'}
+    else{hideTune()}
+  });
 
   // Game loop
   const BOUNDS={xMin:-6.8,xMax:6.8,zMin:-4.3,zMax:4.3};
