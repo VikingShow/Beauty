@@ -103,21 +103,21 @@ document.body.appendChild(renderer.domElement);
 
 // Balanced gallery lighting
 // === DAY/NIGHT CYCLE ===
-let dayTime=0.35,daySpeed=0.03; // start at late morning, slow cycle (~3min full)
+let dayTime=0.85,daySpeed=0.05; // start at dramatic dusk, faster demo
 const ambient=new THREE.AmbientLight(0xC8C0B8,1.8);scene.add(ambient);
 const sun=new THREE.DirectionalLight(0xFFF5E6,8);sun.position.set(5,6,0);scene.add(sun);
 const fillL=new THREE.DirectionalLight(0xB0C0E0,3.5);fillL.position.set(-5,3,4);scene.add(fillL);
 const rimL=new THREE.DirectionalLight(0xFFF0E0,2.5);rimL.position.set(0,2,-5);scene.add(rimL);
 
 const DAY_COLORS=[
-  {t:0.00,sky:'#0a0a18',sun:'#4466aa',amb:'#334466',ambI:0.5,sunI:1.5, fillI:1.0, rimI:0.8},  // midnight
-  {t:0.08,sky:'#1a2a44',sun:'#ff8844',amb:'#665544',ambI:1.0,sunI:3.0, fillI:1.5, rimI:1.2},  // dawn
-  {t:0.25,sky:'#8899bb',sun:'#fff5e6',amb:'#c8c0b8',ambI:2.5,sunI:8.0, fillI:3.5, rimI:2.5},  // morning
-  {t:0.50,sky:'#aabbcc',sun:'#ffffff',amb:'#d0ccc8',ambI:3.5,sunI:10.0,fillI:4.0, rimI:3.0},  // noon
-  {t:0.70,sky:'#8899aa',sun:'#ffe8d0',amb:'#c8c0b0',ambI:2.5,sunI:7.0, fillI:3.0, rimI:2.5},  // afternoon
-  {t:0.85,sky:'#553322',sun:'#ff6633',amb:'#554433',ambI:1.5,sunI:4.0, fillI:2.0, rimI:1.5},  // dusk
-  {t:0.95,sky:'#0f1525',sun:'#335588',amb:'#223344',ambI:0.8,sunI:2.0, fillI:1.2, rimI:1.0},  // night
-  {t:1.00,sky:'#0a0a18',sun:'#4466aa',amb:'#334466',ambI:0.5,sunI:1.5, fillI:1.0, rimI:0.8},  // midnight again
+  {t:0.00,sky:'#050510',sun:'#334488',amb:'#111122',ambI:0.15,sunI:0.8,fillI:0.4,rimI:0.3},
+  {t:0.08,sky:'#1a1a33',sun:'#ff6633',amb:'#332211',ambI:0.5, sunI:2.5,fillI:1.0,rimI:0.8},
+  {t:0.25,sky:'#6688aa',sun:'#fff5e6',amb:'#999088',ambI:2.0, sunI:8.0,fillI:3.5,rimI:2.5},
+  {t:0.50,sky:'#99aabb',sun:'#ffffff',amb:'#c8c0b8',ambI:3.5, sunI:12.0,fillI:4.5,rimI:3.0},
+  {t:0.70,sky:'#778899',sun:'#ffe0c0',amb:'#b0a898',ambI:2.5, sunI:7.0,fillI:3.0,rimI:2.5},
+  {t:0.85,sky:'#332211',sun:'#ff4411',amb:'#221108',ambI:0.8, sunI:3.0,fillI:1.5,rimI:1.0},
+  {t:0.95,sky:'#0a0a18',sun:'#224466',amb:'#0a0a18',ambI:0.3, sunI:1.2,fillI:0.6,rimI:0.5},
+  {t:1.00,sky:'#050510',sun:'#334488',amb:'#111122',ambI:0.15,sunI:0.8,fillI:0.4,rimI:0.3},
 ];
 
 function lerp3(a,b,t){return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
@@ -325,7 +325,7 @@ function start(){
   const tuneTitle=tune.querySelector('.title');
   const tuneBtns=tune.querySelectorAll('button');
 
-  function hideTune(){selectedMesh=null;tune.style.display='none'}
+  function hideTune(){selectedMesh=null;if(tune)tune.style.display='none'}
   // Tune button bindings: -1cm H, +1cm H, -1cm V, +1cm V, -10%, +10%, remove, done
   tuneBtns[0].onclick=function(){if(selectedMesh)nudgeMesh(selectedMesh,-0.01,0)};
   tuneBtns[1].onclick=function(){if(selectedMesh)nudgeMesh(selectedMesh,0.01,0)};

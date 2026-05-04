@@ -36,7 +36,7 @@ export struct Minimap {
   @Prop playerZ: number = 0;
   @Prop playerYaw: number = 0;
   onWaypointTap: (wp: Waypoint) => void = (wp: Waypoint) => {};
-
+我的
   private pxPerMeter(): number {
     const m: number = Math.max(this.layout.worldWidth, this.layout.worldDepth);
     return m > 0 ? MAP_MAX_PX / m : 1;
