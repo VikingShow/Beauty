@@ -91,7 +91,7 @@ let selectedArt=null,placement=0,artworks=[];
 
 // === SCENE: elegant museum lighting ===
 const scene=new THREE.Scene;
-scene.background=new THREE.Color(0x181820);
+scene.background=new THREE.Color(0x8899bb); // bright sky blue - always visible
 
 const cam=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,100);
 cam.position.set(0,1.65,3.5);
@@ -161,6 +161,11 @@ function timeLabel(){
   else if(h<17)el.textContent='Day '+str;
   else el.textContent='Dusk '+str;
 }
+
+// Diagnostic: grid + cube to verify rendering works immediately
+const grid=new THREE.GridHelper(12,12,0x888888,0x333333);scene.add(grid);
+const testCube=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({color:0xd4b678}));
+testCube.position.set(0,1,-3);scene.add(testCube);
 
 // Ghost preview
 const ghost=new THREE.Mesh(
@@ -280,9 +285,8 @@ let started=false;
 loadSceneData('white_cube');
 
 function start(){
-  // Init dayTime from real clock (0-1 mapping of 24h day)
-  const realH=new Date().getHours()+new Date().getMinutes()/60;
-  dayTime=realH/24;
+  // DEBUG: force noon for testing
+  dayTime=0.5;
   // Time UI button bindings
   const tSlower=document.getElementById('tSlower'),tPause=document.getElementById('tPause'),tFaster=document.getElementById('tFaster');
   if(tSlower)tSlower.onclick=function(){daySpeed=Math.max(0.003,daySpeed/2)};
