@@ -52,12 +52,12 @@ document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preven
 
 // Data
 const ARTWORKS=[
-  {id:'mona_lisa',title:'蒙娜丽莎',artist:'Leonardo'},
-  {id:'starry_night',title:'星月夜',artist:'van Gogh'},
-  {id:'birth_of_venus',title:'维纳斯诞生',artist:'Botticelli'},
-  {id:'school_of_athens',title:'雅典学院',artist:'Raphael'},
-  {id:'creation_of_adam',title:'创造亚当',artist:'Michelangelo'},
-  {id:'primavera',title:'春',artist:'Primavera'}
+  {id:'mona_lisa',title:'蒙娜丽莎',artist:'Leonardo',rw:77,rh:53},
+  {id:'starry_night',title:'星月夜',artist:'van Gogh',rw:921,rh:737},
+  {id:'birth_of_venus',title:'维纳斯诞生',artist:'Botticelli',rw:1725,rh:2785},
+  {id:'school_of_athens',title:'雅典学院',artist:'Raphael',rw:500,rh:770},
+  {id:'creation_of_adam',title:'创造亚当',artist:'Michelangelo',rw:280,rh:570},
+  {id:'primavera',title:'春',artist:'Primavera',rw:203,rh:314}
 ];
 const WALLS=[
   {n:[0,0,1],p:[0,0,-5],min:-7.5,max:7.5},
@@ -70,7 +70,7 @@ let selectedArt=null,placement=0,artworks=[];
 
 // === SCENE: elegant museum lighting ===
 const scene=new THREE.Scene;
-scene.background=new THREE.Color(0x2a2a35);
+scene.background=new THREE.Color(0x181820);
 
 const cam=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,100);
 cam.position.set(0,1.65,3.5);
@@ -81,10 +81,10 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.
 document.body.appendChild(renderer.domElement);
 
 // Balanced gallery lighting
-scene.add(new THREE.AmbientLight(0xD0CCC8,2.5));
-const key=new THREE.DirectionalLight(0xFFF5E6,10);key.position.set(5,6,0);scene.add(key);
-const fill=new THREE.DirectionalLight(0xC0D0F0,5);fill.position.set(-5,3,4);scene.add(fill);
-const rim=new THREE.DirectionalLight(0xFFF0E0,3);rim.position.set(0,2,-5);scene.add(rim);
+scene.add(new THREE.AmbientLight(0xC8C0B8,1.8));
+const key=new THREE.DirectionalLight(0xFFF5E6,8);key.position.set(5,6,0);scene.add(key);
+const fill=new THREE.DirectionalLight(0xB0C0E0,3.5);fill.position.set(-5,3,4);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xFFF0E0,2.5);rim.position.set(0,2,-5);scene.add(rim);
 
 // Ghost preview
 const ghost=new THREE.Mesh(
@@ -184,17 +184,21 @@ function start(){
   document.getElementById('place').onclick=function(){
     if(!placement||!ghost.visible||!selectedArt)return;
 
-    // Use slot dimensions for aspect ratio; default 1.2×0.9
-    const w=ghost.userData?.w||1.2, h=ghost.userData?.h||0.9;
+    // Compute artwork size fitting inside slot while maintaining aspect ratio
+    const slotW=ghost.userData?.w||1.2, slotH=ghost.userData?.h||0.9;
+    let artW=slotW, artH=slotH;
+    if(selectedArt.rw&&selectedArt.rh){
+      const artRatio=selectedArt.rw/selectedArt.rh;
+      const slotRatio=slotW/slotH;
+      if(artRatio>slotRatio){artW=slotW;artH=slotW/artRatio}
+      else{artH=slotH;artW=slotH*artRatio}
+    }
 
-    const geo=new THREE.PlaneGeometry(w,h);
+    const geo=new THREE.PlaneGeometry(artW,artH);
     let mat;
     const tex=texCache[selectedArt.id];
-    if(tex){
-      mat=new THREE.MeshStandardMaterial({map:tex,roughness:0.4,side:THREE.DoubleSide});
-    }else{
-      mat=new THREE.MeshStandardMaterial({color:0xd4b678,roughness:0.4,side:THREE.DoubleSide});
-    }
+    if(tex){mat=new THREE.MeshStandardMaterial({map:tex,roughness:0.4,side:THREE.DoubleSide})}
+    else{mat=new THREE.MeshStandardMaterial({color:0xd4b678,roughness:0.4,side:THREE.DoubleSide})}
     const q=new THREE.Mesh(geo,mat);
     q.position.copy(ghost.position);q.quaternion.copy(ghost.quaternion);
     q.userData={id:selectedArt.id,title:selectedArt.title};
@@ -262,11 +266,20 @@ function start(){
         }
       }
       if(nearestSlot){
-        // Snap ghost to slot
+        // Snap ghost to slot, facing outward from wall
         const s=nearestSlot;
-        ghost.position.copy(s.pos);ghost.position.x+=0.01;ghost.position.z+=0.01;
-        ghost.lookAt(camPos.x,camPos.y,camPos.z);
-        ghost.position.x+=0.01;ghost.position.z+=0.01;
+        ghost.position.copy(s.pos);
+        // Determine wall normal from position
+        let nx=0,nz=0;
+        if(Math.abs(s.pos.z+5)<0.1){nx=0;nz=1}      // north wall → face +Z
+        else if(Math.abs(s.pos.z-5)<0.1){nx=0;nz=-1} // south wall → face -Z
+        else if(Math.abs(s.pos.x-7.5)<0.1){nx=-1;nz=0} // east wall → face -X
+        else if(Math.abs(s.pos.x+7.5)<0.1){nx=1;nz=0}  // west wall → face +X
+        ghost.position.x+=nx*0.005;ghost.position.z+=nz*0.005;
+        // Face wall normal direction
+        ghost.quaternion.setFromUnitVectors(
+          new THREE.Vector3(0,0,1),new THREE.Vector3(nx,0,nz)
+        );
         ghost.scale.set(s.w/1.2,s.h/0.9,1);
         ghost.userData={w:s.w,h:s.h};
         ghost.visible=true;document.getElementById('place').style.display='block';
