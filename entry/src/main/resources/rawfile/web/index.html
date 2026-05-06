@@ -33,6 +33,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;font-family:
 #artCard{position:fixed;z-index:8;display:none;background:rgba(10,10,26,0.92);border:1px solid #d4b678;border-radius:10px;padding:8px 14px;color:#f5e6c8;font-size:12px;max-width:180px;text-align:center;pointer-events:none}
 #artCard .t2{font-size:14px;font-weight:bold;color:#f5e6c8;margin-bottom:2px}
 #artCard .a2{font-size:11px;color:#b9a57a}
+#enterBtn{position:fixed;top:55%;left:50%;transform:translateX(-50%);z-index:12;display:none;background:#d4b678;color:#0a0a1a;border:none;border-radius:22px;padding:10px 28px;font-size:16px;font-weight:bold;cursor:pointer}
+#exitBtn{position:fixed;top:12px;right:12px;z-index:12;display:none;background:rgba(26,26,46,0.8);border:1px solid #d4b678;color:#d4b678;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer}
 #sceneSel{position:fixed;top:12px;left:12px;z-index:12;display:flex;gap:4px}
 #sceneSel button{background:rgba(26,26,46,0.8);border:1px solid rgba(212,182,120,0.3);color:#8a8a9a;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer}
 #sceneSel button.on{background:rgba(212,182,120,0.2);border-color:#d4b678;color:#d4b678}
@@ -44,6 +46,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;font-family:
 <input type="file" id="fileImport" accept=".json" style="display:none">
 <div id="hotbar"><div class="hot-item up">＋</div></div>
 <div id="artCard"><div class="t2"></div><div class="a2"></div></div>
+<button id="enterBtn">走入画中</button><button id="exitBtn">← 返回展厅</button>
 <div id="cross">＋</div>
 <button id="place">放置</button>
 <div id="info"></div>
@@ -84,7 +87,21 @@ const ARTWORKS=[
 ];
 const WALLS=[{n:[0,0,1],p:[0,0,-5],min:-7.5,max:7.5},{n:[0,0,-1],p:[0,0,5],min:-7.5,max:7.5},{n:[-1,0,0],p:[7.5,0,0],min:-5,max:5},{n:[1,0,0],p:[-7.5,0,0],min:-5,max:5}];
 function thumb(id){return window.THUMBS&&window.THUMBS[id]?window.THUMBS[id]:''}
-let selectedArt=null,placement=0,artworks=[];
+let selectedArt=null,placement=0,artworks=[],inPainting=false,paintingWorld=null,paintingData=null;
+const PAINTING_WORLDS={
+  mona_lisa:{sky:'#C4956A',ground:'#3a2a1a',fog:'#8B7355',accent:'#2a1a0a'},
+  birth_of_venus:{sky:'#87CEEB',ground:'#F5DEB3',fog:'#3a6b7c',accent:'#FFFFFF'},
+  school_of_athens:{sky:'#F5F5DC',ground:'#D2B48C',fog:'#8B5E3C',accent:'#FFFFFF'},
+  creation_of_adam:{sky:'#FFFFFF',ground:'#FFE4B5',fog:'#C4956A',accent:'#FFD700'},
+  primavera:{sky:'#90EE90',ground:'#4a6b3a',fog:'#228B22',accent:'#FFD700'},
+  last_supper:{sky:'#2a1a0a',ground:'#8B7355',fog:'#1a0a05',accent:'#FFD700'},
+  virgin_of_the_rocks:{sky:'#87CEEB',ground:'#4a6a5a',fog:'#1a2a1a',accent:'#C0C0C0'},
+  venus_of_urbino:{sky:'#FFE4B5',ground:'#8B4513',fog:'#800020',accent:'#FFD700'},
+  sistine_madonna:{sky:'#87CEEB',ground:'#FFFFFF',fog:'#F0F0FF',accent:'#FFD700'},
+  last_judgment:{sky:'#1a1a2a',ground:'#2a1a1a',fog:'#FF6347',accent:'#FFD700'},
+  masaccio_trinity:{sky:'#F5F5DC',ground:'#808080',fog:'#D2B48C',accent:'#FFFFFF'},
+  uccello_san_romano:{sky:'#8B0000',ground:'#2F4F4F',fog:'#DAA520',accent:'#FFD700'}
+};
 
 // Scene
 const scene=new THREE.Scene;scene.background=new THREE.Color(0x8899bb);
@@ -222,9 +239,64 @@ function startUI(){
   function up(m){const v=new THREE.Vector3;m.getWorldPosition(v);v.project(cam);const sx=(v.x*0.5+0.5)*innerWidth,sy=(-v.y*0.5+0.5)*innerHeight;tune.style.left=Math.min(sx+30,innerWidth-200)+'px';tune.style.top=Math.max(sy-60,10)+'px';tt.textContent=m.userData&&m.userData.title?m.userData.title:'画作'}
   renderer.domElement.addEventListener('click',function(e){if(placement)return;const mx=(e.clientX/innerWidth)*2-1,my=-(e.clientY/innerHeight)*2+1;tuneRay.setFromCamera(new THREE.Vector2(mx,my),cam);const hits=tuneRay.intersectObjects(artworks);if(hits.length>0){selM=hits[0].object;up(selM);tune.style.display='block'}else{ht()}});
 
+  // === ENTER/EXIT PAINTING WORLD ===
+  function enterPainting(q){
+    inPainting=true;paintingData=q.userData;
+    const pw=PAINTING_WORLDS[q.userData.id]||PAINTING_WORLDS.mona_lisa;
+    // Hide gallery UI
+    document.getElementById('hotbar').style.display='none';document.getElementById('sceneSel').style.display='none';
+    document.getElementById('cross').style.display='none';document.getElementById('place').style.display='none';
+    document.getElementById('artCard').style.display='none';document.getElementById('exitBtn').style.display='block';
+    document.getElementById('enterBtn').style.display='none';
+    // Hide gallery scene objects
+    if(gltfRoot)gltfRoot.visible=false;testCube.visible=false;grid.visible=false;ghost.visible=false;
+    artworks.forEach(function(a){a.visible=false});
+    // Create painting world
+    paintingWorld=new THREE.Group;scene.add(paintingWorld);
+    // Sky dome
+    const skyGeo=new THREE.SphereGeometry(20,32,16);const skyMat=new THREE.MeshBasicMaterial({color:pw.sky,side:THREE.BackSide});
+    paintingWorld.add(new THREE.Mesh(skyGeo,skyMat));
+    // Ground
+    const groundGeo=new THREE.PlaneGeometry(40,40);const groundMat=new THREE.MeshStandardMaterial({color:pw.ground,roughness:0.8});
+    const ground=new THREE.Mesh(groundGeo,groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-2;paintingWorld.add(ground);
+    // Accent columns/pillars
+    for(let i=0;i<6;i++){const angle=(i/6)*Math.PI*2;const col=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,4,8),new THREE.MeshStandardMaterial({color:pw.accent,roughness:0.5}));
+      col.position.set(Math.cos(angle)*6,-0.5,Math.sin(angle)*6);paintingWorld.add(col)}
+    // Particles
+    const partsGeo=new THREE.BufferGeometry;const partsCount=200;const posArray=new Float32Array(partsCount*3);
+    for(let i=0;i<partsCount*3;i++)posArray[i]=(Math.random()-0.5)*20;
+    partsGeo.setAttribute('position',new THREE.BufferAttribute(posArray,3));
+    const partsMat=new THREE.PointsMaterial({color:pw.fog,size:0.15,transparent:true,opacity:0.6});
+    paintingWorld.add(new THREE.Points(partsGeo,partsMat));
+    // Fog
+    scene.fog=new THREE.Fog(pw.fog,5,25);
+    // Reset camera
+    cam.position.set(0,2,8);cam.lookAt(0,0,0);
+    log('Entered painting: '+paintingData.title)
+  }
+
+  document.getElementById('exitBtn').onclick=function(){
+    inPainting=false;paintingData=null;
+    // Show gallery UI
+    document.getElementById('hotbar').style.display='';document.getElementById('sceneSel').style.display='';
+    document.getElementById('exitBtn').style.display='none';document.getElementById('enterBtn').style.display='none';
+    // Show gallery scene
+    if(gltfRoot)gltfRoot.visible=true;testCube.visible=false;grid.visible=false;
+    artworks.forEach(function(a){a.visible=true});
+    // Remove painting world
+    if(paintingWorld){scene.remove(paintingWorld);paintingWorld=null}
+    scene.fog=null;cam.position.set(0,1.65,3.5);
+    log('Exited painting world')
+  };
+
   // Loop
   const st={yaw:0,pitch:0,bp:0,im:false,st:0,keys:{}};let lt=performance.now();
-  function loop(now){requestAnimationFrame(loop);let dt=(now-lt)/1000;lt=now;if(dt>0.05)dt=0.05;if(dt<=0)dt=0.016;pj();
+  function loop(now){requestAnimationFrame(loop);let dt=(now-lt)/1000;lt=now;if(dt>0.05)dt=0.05;if(dt<=0)dt=0.016;
+    if(inPainting){pj();const sy2=Math.sin(st.yaw),cy2=Math.cos(st.yaw),cp2=Math.cos(st.pitch);
+      if(joyMove.fwd||joyMove.str){cam.position.x+=(sy2*joyMove.fwd+cy2*joyMove.str)*dt;cam.position.z+=(-cy2*joyMove.fwd+sy2*joyMove.str)*dt}
+      cam.lookAt(cam.position.x+sy2*cp2,cam.position.y-Math.sin(st.pitch),cam.position.z-cy2*cp2);
+      renderer.render(scene,cam);return}
+    pj();
     const sy=Math.sin(st.yaw),cy=Math.cos(st.yaw),cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);
     let kf=0,ks=0;if(st.keys['w']||st.keys['ArrowUp'])kf=1;if(st.keys['s']||st.keys['ArrowDown'])kf=-1;if(st.keys['a']||st.keys['ArrowLeft'])ks=-1;if(st.keys['d']||st.keys['ArrowRight'])ks=1;
     const fwd=jm.fwd+kf*3,str=jm.str+ks*2,mv=Math.abs(fwd)>0.01||Math.abs(str)>0.01;
@@ -241,6 +313,11 @@ function startUI(){
       ac.querySelector('.t2').textContent=nearA.userData.title;ac.querySelector('.a2').textContent=nearA.userData.artist||'';
       if(ac.dataset.id!==nearA.userData.id){ac.dataset.id=nearA.userData.id;speak(nearA.userData.title+'。'+(nearA.userData.desc||''))}}
     else{ac.style.display='none';ac.dataset.id=''}
+    // Enter painting: within 1.2m
+    const eb=document.getElementById('enterBtn');let ep=null,ed=1.2;
+    artworks.forEach(function(q){const d=cam.position.distanceTo(q.position);if(d<ed){ed=d;ep=q}});
+    if(!inPainting&&ep&&!placement){eb.style.display='block';eb.onclick=function(){enterPainting(ep)}}
+    else if(!ep||placement){eb.style.display='none'}
     cam.position.x+=bx;cam.position.y=1.65+by;cam.lookAt(cam.position.x+sy*cp,cam.position.y-sp,cam.position.z-cy*cp);cam.position.x-=bx;cam.position.y=1.65;
     if(placement){const dir=cam.getWorldDirection(new THREE.Vector3);let ns=null,nd2=3.0;
       for(let i=0;i<slots3D.length;i++){const s=slots3D[i],dx=s.pos.x-cam.position.x,dz=s.pos.z-cam.position.z,dist=Math.sqrt(dx*dx+dz*dz);if(dist<nd2&&dx*dir.x+dz*dir.z>0){nd2=dist;ns=s}}
