@@ -316,12 +316,14 @@ document.getElementById('exitBtn').onclick=function(){
       if(ac.dataset.id!==nearA.userData.id){ac.dataset.id=nearA.userData.id;speak(nearA.userData.title+'。'+(nearA.userData.desc||''))}}
     else{ac.style.display='none';ac.dataset.id=''}
     // Enter painting: within 1.2m
-    const eb=document.getElementById('enterBtn');let ep=null,ed=1.2;
+    const eb=document.getElementById('enterBtn');let ep=null,ed=1.5;
     artworks.forEach(function(q){if(q.visible){const d=cam.position.distanceTo(q.position);if(d<ed){ed=d;ep=q}}});
     if(!inPainting&&ep&&!placement){eb.style.display='block';eb.dataset.target=artworks.indexOf(ep).toString()}else{eb.style.display='none';eb.dataset.target=''}
+    // Debug: log if artwork exists but button hidden
+    if(artworks.length>0&&eb.style.display==='none'&&!placement){const d0=cam.position.distanceTo(artworks[0].position);if(d0<2)I.textContent=(I.textContent||'').replace(/\[dist:.*\]/,'')+'[dist:'+d0.toFixed(2)+']'}
     cam.position.x+=bx;cam.position.y=1.65+by;cam.lookAt(cam.position.x+sy*cp,cam.position.y-sp,cam.position.z-cy*cp);cam.position.x-=bx;cam.position.y=1.65;
     if(placement){const dir=cam.getWorldDirection(new THREE.Vector3);let ns=null,nd2=3.0;
-      for(let i=0;i<slots3D.length;i++){const s=slots3D[i],dx=s.pos.x-cam.position.x,dz=s.pos.z-cam.position.z,dist=Math.sqrt(dx*dx+dz*dz);if(dist<nd2&&dx*dir.x+dz*dir.z>0){nd2=dist;ns=s}}
+      for(let i=0;i<slots3D.length;i++){const s=slots3D[i],dx=s.pos.x-cam.position.x,dz=s.pos.z-cam.position.z,dist=Math.sqrt(dx*dx+dz*dz);if(dist<nd2&&dx*dir.x+dz*dir.z>0){let occ=0;artworks.forEach(function(q){if(q.position.distanceTo(s.pos)<0.3)occ=1});if(!occ){nd2=dist;ns=s}}}
       if(ns){ghost.position.copy(ns.pos);let nx=0,nz=0;if(Math.abs(ns.pos.z+5)<0.1){nx=0;nz=1}else if(Math.abs(ns.pos.z-5)<0.1){nx=0;nz=-1}else if(Math.abs(ns.pos.x-7.5)<0.1){nx=-1;nz=0}else if(Math.abs(ns.pos.x+7.5)<0.1){nx=1;nz=0}ghost.position.x+=nx*0.03;ghost.position.z+=nz*0.03;ghost.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(nx,0,nz));ghost.scale.set(ns.w/1.2,ns.h/0.9,1);ghost.userData={w:ns.w,h:ns.h};ghost.visible=true;document.getElementById('place').style.display='block'}
       else{ghost.visible=false;document.getElementById('place').style.display='none'}}
     else{ghost.visible=false;document.getElementById('place').style.display='none'}
