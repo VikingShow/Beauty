@@ -316,11 +316,11 @@ document.getElementById('exitBtn').onclick=function(){
       if(ac.dataset.id!==nearA.userData.id){ac.dataset.id=nearA.userData.id;speak(nearA.userData.title+'。'+(nearA.userData.desc||''))}}
     else{ac.style.display='none';ac.dataset.id=''}
     // Enter painting: within 1.2m
-    const eb=document.getElementById('enterBtn');let ep=null,ed=1.5;
-    artworks.forEach(function(q){if(q.visible){const d=cam.position.distanceTo(q.position);if(d<ed){ed=d;ep=q}}});
+    let ep=null,ed=1.5,dbg='';
+    artworks.forEach(function(q,i){if(q.visible){const d=cam.position.distanceTo(q.position);dbg+=i+':'+d.toFixed(2)+' ';if(d<ed){ed=d;ep=q}}});
+    const eb=document.getElementById('enterBtn');
     if(!inPainting&&ep&&!placement){eb.style.display='block';eb.dataset.target=artworks.indexOf(ep).toString()}else{eb.style.display='none';eb.dataset.target=''}
-    // Debug: log if artwork exists but button hidden
-    if(artworks.length>0&&eb.style.display==='none'&&!placement){const d0=cam.position.distanceTo(artworks[0].position);if(d0<2)I.textContent=(I.textContent||'').replace(/\[dist:.*\]/,'')+'[dist:'+d0.toFixed(2)+']'}
+    if(artworks.length>0){const d0=cam.position.distanceTo(artworks[0].position);I.textContent=(I.textContent||'').replace(/\[.*\]/,'')+'[n='+artworks.length+' d='+d0.toFixed(2)+' vis='+artworks[0].visible+']'}
     cam.position.x+=bx;cam.position.y=1.65+by;cam.lookAt(cam.position.x+sy*cp,cam.position.y-sp,cam.position.z-cy*cp);cam.position.x-=bx;cam.position.y=1.65;
     if(placement){const dir=cam.getWorldDirection(new THREE.Vector3);let ns=null,nd2=3.0;
       for(let i=0;i<slots3D.length;i++){const s=slots3D[i],dx=s.pos.x-cam.position.x,dz=s.pos.z-cam.position.z,dist=Math.sqrt(dx*dx+dz*dz);if(dist<nd2&&dx*dir.x+dz*dir.z>0){let occ=0;artworks.forEach(function(q){if(q.position.distanceTo(s.pos)<0.3)occ=1});if(!occ){nd2=dist;ns=s}}}
