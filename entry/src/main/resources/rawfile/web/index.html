@@ -33,14 +33,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;font-family:
 #sceneSel{position:fixed;top:12px;left:12px;z-index:12;display:flex;gap:4px}
 #sceneSel button{background:rgba(26,26,46,0.8);border:1px solid rgba(212,182,120,0.3);color:#8a8a9a;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer}
 #sceneSel button.on{background:rgba(212,182,120,0.2);border-color:#d4b678;color:#d4b678}
-#timeUI{position:fixed;top:12px;right:12px;z-index:12;background:rgba(26,26,46,0.7);border:1px solid rgba(212,182,120,0.2);border-radius:6px;padding:4px 10px;color:#d4b678;font-size:11px;display:flex;align-items:center;gap:6px}
-#timeUI button{background:none;border:none;color:#8a8a9a;font-size:12px;cursor:pointer;padding:0 2px}
 </style>
 </head>
 <body>
 
 <div id="sceneSel"><button class="on" data-scene="white_cube">白立方</button><button data-scene="salon_carre">Salon Carré</button></div>
-<div id="timeUI"><button id="tSlower">◀◀</button><button id="tPause">⏯</button><span id="tLabel">Day</span><button id="tFaster">▶▶</button></div>
 <div id="hotbar"><div class="hot-item up">＋</div></div>
 <div id="cross">＋</div>
 <button id="place">放置</button>
@@ -204,10 +201,10 @@ function startUI(){
     cam.position.x=Math.max(BOUNDS.xMin+0.3,Math.min(BOUNDS.xMax-0.3,cam.position.x));cam.position.z=Math.max(BOUNDS.zMin+0.3,Math.min(BOUNDS.zMax-0.3,cam.position.z));
     if(mv){st.bp+=dt*12;st.im=true;st.st+=dt}else{st.im=false;st.st=0}const by=st.im?Math.sin(st.bp)*0.015:0,bx=st.im?Math.cos(st.bp*0.5)*0.005:0;if(st.st>0.5){st.st-=0.5;pf()}
     shadowDisc.position.set(cam.position.x,0.02,cam.position.z);cam.position.x+=bx;cam.position.y=1.65+by;cam.lookAt(cam.position.x+sy*cp,cam.position.y-sp,cam.position.z-cy*cp);cam.position.x-=bx;cam.position.y=1.65;
-    if(placement){const dir=cam.getWorldDirection(new THREE.Vector3);let ns=null,nd2=2.5;
+    if(placement){const dir=cam.getWorldDirection(new THREE.Vector3);let ns=null,nd2=3.0;
       for(let i=0;i<slots3D.length;i++){const s=slots3D[i],dx=s.pos.x-cam.position.x,dz=s.pos.z-cam.position.z,dist=Math.sqrt(dx*dx+dz*dz);if(dist<nd2&&dx*dir.x+dz*dir.z>0){nd2=dist;ns=s}}
       if(ns){ghost.position.copy(ns.pos);let nx=0,nz=0;if(Math.abs(ns.pos.z+5)<0.1){nx=0;nz=1}else if(Math.abs(ns.pos.z-5)<0.1){nx=0;nz=-1}else if(Math.abs(ns.pos.x-7.5)<0.1){nx=-1;nz=0}else if(Math.abs(ns.pos.x+7.5)<0.1){nx=1;nz=0}ghost.position.x+=nx*0.005;ghost.position.z+=nz*0.005;ghost.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(nx,0,nz));ghost.scale.set(ns.w/1.2,ns.h/0.9,1);ghost.userData={w:ns.w,h:ns.h};ghost.visible=true;document.getElementById('place').style.display='block'}
-      else{let best=null,bestD=5;WALLS.forEach(function(w){const d=dir.x*w.n[0]+dir.y*w.n[1]+dir.z*w.n[2];if(d>=-0.001)return;const t=((w.p[0]-cam.position.x)*w.n[0]+(w.p[1]-cam.position.y)*w.n[1]+(w.p[2]-cam.position.z)*w.n[2])/d;if(t>0.01&&t<bestD){const hx=cam.position.x+dir.x*t,hy=cam.position.y+dir.y*t,hz=cam.position.z+dir.z*t;if(hy<0.5||hy>4.5)return;const al=w.n[2]!==0?hx:hz;if(al<w.min||al>w.max)return;let ov=0;artworks.forEach(function(q){const dx=hx-q.position.x,dz=hz-q.position.z;if(dx*dx+dz*dz<0.3)ov=1});if(!ov){best={x:hx,y:hy,z:hz,nx:w.n[0],nz:w.n[2]};bestD=t}}});if(best){ghost.position.set(best.x,best.y,best.z);ghost.quaternion.copy(cam.quaternion);ghost.position.x+=best.nx*0.01;ghost.position.z+=best.nz*0.01;ghost.scale.set(1,1,1);ghost.userData={w:1.2,h:0.9};ghost.visible=true;document.getElementById('place').style.display='block'}else{ghost.visible=false;document.getElementById('place').style.display='none'}}}
+      else{ghost.visible=false;document.getElementById('place').style.display='none'}}
     else{ghost.visible=false;document.getElementById('place').style.display='none'}
     renderer.render(scene,cam)}
   requestAnimationFrame(loop);
