@@ -177,7 +177,7 @@ loadScene('white_cube');
 
 // Export
 document.getElementById('btnExport').onclick=function(){
-  const data=[];artworks.forEach(function(q){data.push({id:q.userData.id,title:q.userData.title,x:q.position.x,y:q.position.y,z:q.position.z,qx:q.quaternion.x,qy:q.quaternion.y,qz:q.quaternion.z,qw:q.quaternion.w,scale:q.scale.x})});
+  const data=[];artworks.forEach(function(q){data.push({id:q.userData.id,title:q.userData.title,artist:q.userData.artist,desc:q.userData.desc,x:q.position.x,y:q.position.y,z:q.position.z,qx:q.quaternion.x,qy:q.quaternion.y,qz:q.quaternion.z,qw:q.quaternion.w,scale:q.scale.x})});
   const json=JSON.stringify({sceneId:currentScene,placements:data},null,2);
   const blob=new Blob([json],{type:'application/json'});const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='exhibition_'+currentScene+'.json';a.click();URL.revokeObjectURL(url);
@@ -188,7 +188,7 @@ document.getElementById('fileImport').onchange=function(e){
   const file=e.target.files[0];if(!file)return;const reader=new FileReader;
   reader.onload=function(ev){try{const data=JSON.parse(ev.target.result);if(!data.placements)return;
     artworks.forEach(function(q){scene.remove(q)});artworks=[];
-    data.placements.forEach(function(p){const geo=new THREE.PlaneGeometry(1.2,0.9);const tex2=texCache[p.id];let mat;if(tex2)mat=new THREE.MeshStandardMaterial({map:tex2,roughness:0.4,side:THREE.DoubleSide});else mat=new THREE.MeshStandardMaterial({color:0xd4b678,roughness:0.4,side:THREE.DoubleSide});const q=new THREE.Mesh(geo,mat);q.position.set(p.x,p.y,p.z);if(p.qx!==undefined)q.quaternion.set(p.qx,p.qy,p.qz,p.qw);q.userData={id:p.id,title:p.title};if(p.scale)q.scale.setScalar(p.scale);scene.add(q);artworks.push(q)});
+    data.placements.forEach(function(p){const geo=new THREE.PlaneGeometry(1.2,0.9);const tex2=texCache[p.id];let mat;if(tex2)mat=new THREE.MeshStandardMaterial({map:tex2,roughness:0.4,side:THREE.DoubleSide});else mat=new THREE.MeshStandardMaterial({color:0xd4b678,roughness:0.4,side:THREE.DoubleSide});const q=new THREE.Mesh(geo,mat);q.position.set(p.x,p.y,p.z);if(p.qx!==undefined)q.quaternion.set(p.qx,p.qy,p.qz,p.qw);q.userData={id:p.id,title:p.title,artist:p.artist,desc:p.desc};if(p.scale)q.scale.setScalar(p.scale);scene.add(q);artworks.push(q)});
     log('Imported '+data.placements.length+' artworks')
   }catch(err){log('Import error: '+err.message)}};
   reader.readAsText(file)
