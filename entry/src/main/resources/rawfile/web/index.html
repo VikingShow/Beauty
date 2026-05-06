@@ -30,6 +30,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;font-family:
 #tune button{background:rgba(30,30,50,0.8);border:1px solid rgba(212,182,120,0.4);color:#d4b678;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer}
 #tune button.del{color:#ff6b6b;border-color:rgba(255,100,100,0.4)}
 #tune button.done{background:#d4b678;color:#0a0a1a;border-color:#d4b678;padding:6px 16px;font-weight:bold}
+#artCard{position:fixed;z-index:8;display:none;background:rgba(10,10,26,0.92);border:1px solid #d4b678;border-radius:10px;padding:8px 14px;color:#f5e6c8;font-size:12px;max-width:180px;text-align:center;pointer-events:none}
+#artCard .t2{font-size:14px;font-weight:bold;color:#f5e6c8;margin-bottom:2px}
+#artCard .a2{font-size:11px;color:#b9a57a}
 #sceneSel{position:fixed;top:12px;left:12px;z-index:12;display:flex;gap:4px}
 #sceneSel button{background:rgba(26,26,46,0.8);border:1px solid rgba(212,182,120,0.3);color:#8a8a9a;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer}
 #sceneSel button.on{background:rgba(212,182,120,0.2);border-color:#d4b678;color:#d4b678}
@@ -40,6 +43,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;font-family:
 <div id="sceneSel"><button class="on" data-scene="white_cube">白立方</button><button data-scene="salon_carre">Salon Carré</button><button id="btnExport">导出</button><button id="btnImport">导入</button></div>
 <input type="file" id="fileImport" accept=".json" style="display:none">
 <div id="hotbar"><div class="hot-item up">＋</div></div>
+<div id="artCard"><div class="t2"></div><div class="a2"></div></div>
 <div id="cross">＋</div>
 <button id="place">放置</button>
 <div id="info"></div>
@@ -65,12 +69,12 @@ log('Module loaded. THREE v'+THREE.REVISION);
 
 // Data
 const ARTWORKS=[
-  {id:'mona_lisa',title:'蒙娜丽莎',artist:'Leonardo',rw:77,rh:53},
-  {id:'starry_night',title:'星月夜',artist:'van Gogh',rw:921,rh:737},
-  {id:'birth_of_venus',title:'维纳斯诞生',artist:'Botticelli',rw:1725,rh:2785},
-  {id:'school_of_athens',title:'雅典学院',artist:'Raphael',rw:500,rh:770},
-  {id:'creation_of_adam',title:'创造亚当',artist:'Michelangelo',rw:280,rh:570},
-  {id:'primavera',title:'春',artist:'Primavera',rw:203,rh:314}
+  {id:'mona_lisa',title:'蒙娜丽莎',artist:'Leonardo',rw:77,rh:53,desc:'晕染法调和了皮肤与空气的边界。她在看谁？没有人知道。'},
+  {id:'starry_night',title:'星月夜',artist:'van Gogh',rw:921,rh:737,desc:'漩涡般的夜空下，丝柏树如火焰升腾。梵高在圣雷米病房的窗外看见了宇宙。'},
+  {id:'birth_of_venus',title:'维纳斯诞生',artist:'Botticelli',rw:1725,rh:2785,desc:'美之女神从贝壳上升起。风神吹送，春神迎接。古典神话的重生。'},
+  {id:'school_of_athens',title:'雅典学院',artist:'Raphael',rw:500,rh:770,desc:'柏拉图指向天空，亚里士多德指向大地。整个西方思想史被定格为一次会议。'},
+  {id:'creation_of_adam',title:'创造亚当',artist:'Michelangelo',rw:280,rh:570,desc:'即将相触的两根手指之间，留出了美术史上最有名的一厘米空隙。'},
+  {id:'primavera',title:'春',artist:'Primavera',rw:203,rh:314,desc:'维纳斯、三女神、墨丘利在橙树林里组成缓慢的舞步。五百种植物被精准描绘。'}
 ];
 const WALLS=[{n:[0,0,1],p:[0,0,-5],min:-7.5,max:7.5},{n:[0,0,-1],p:[0,0,5],min:-7.5,max:7.5},{n:[-1,0,0],p:[7.5,0,0],min:-5,max:5},{n:[1,0,0],p:[-7.5,0,0],min:-5,max:5}];
 function thumb(id){return window.THUMBS&&window.THUMBS[id]?window.THUMBS[id]:''}
@@ -131,6 +135,7 @@ const shadowDisc=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.5),new THREE.MeshB
 let ac=null;function ia(){if(!ac)try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}
 function pf(){if(!ac)return;const t=ac.currentTime,b=ac.createBuffer(1,ac.sampleRate*0.1,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.25;const n=ac.createBufferSource();n.buffer=b;const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1600;bp.Q.value=1.5;const g=ac.createGain();g.gain.setValueAtTime(0.07,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.08);n.connect(bp);bp.connect(g);g.connect(ac.destination);n.start(t);n.stop(t+0.1)}
 function pp(){if(!ac)return;const t=ac.currentTime,o=ac.createOscillator();o.type='triangle';o.frequency.setValueAtTime(330,t);o.frequency.linearRampToValueAtTime(550,t+0.12);const g=ac.createGain();g.gain.setValueAtTime(0.12,t);g.gain.linearRampToValueAtTime(0,t+0.15);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+0.15)}
+let lastSpoke='';function speak(text){if(!text||text===lastSpoke)return;lastSpoke=text;try{const u=new SpeechSynthesisUtterance(text);u.lang='zh-CN';u.rate=0.85;u.pitch=1.1;u.volume=0.7;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
 
 // Joystick
 const jc=document.getElementById('joystick'),jctx=jc.getContext('2d'),jcx=70,jcy=70,jr=56;let jid=null,jbx=70,jby=70;
@@ -196,7 +201,7 @@ function startUI(){
   ARTWORKS.forEach(function(a){const d=document.createElement('div');d.className='hot-item';const s=thumb(a.id);d.innerHTML=s?('<img src="'+s+'" alt="'+a.title+'"/>'):('<div style="width:44px;height:28px;background:#4a4a5a;border-radius:4px"></div>');d.innerHTML+='<span class="lbl">'+a.title.substring(0,3)+'</span>';d.onclick=function(){sa(a,d)};hb.insertBefore(d,hb.lastElementChild)});
   function sa(a,d){ia();if(selectedArt&&selectedArt.id===a.id&&placement){placement=0;selectedArt=null;ui();return}selectedArt=a;placement=1;document.querySelectorAll('.hot-item').forEach(function(x){x.classList.remove('sel')});d.classList.add('sel');ui()}
   function ui(){document.getElementById('cross').style.display=placement?'block':'none';document.getElementById('place').style.display=placement&&ghost.visible?'block':'none'}
-  document.getElementById('place').onclick=function(){if(!placement||!ghost.visible||!selectedArt)return;let w=ghost.userData&&ghost.userData.w?ghost.userData.w:1.2,h=ghost.userData&&ghost.userData.h?ghost.userData.h:0.9;let ratio=1;const tex2=texCache[selectedArt.id];if(tex2&&tex2.image&&tex2.image.width){ratio=tex2.image.width/tex2.image.height}else if(selectedArt.rw&&selectedArt.rh){ratio=selectedArt.rw/selectedArt.rh}const sr=w/h;if(ratio>sr)h=w/ratio;else w=h*ratio;const geo=new THREE.PlaneGeometry(w,h);let mat;const tex=texCache[selectedArt.id];if(tex)mat=new THREE.MeshStandardMaterial({map:tex,roughness:0.4,side:THREE.DoubleSide});else mat=new THREE.MeshStandardMaterial({color:0xd4b678,roughness:0.4,side:THREE.DoubleSide});const q=new THREE.Mesh(geo,mat);q.position.copy(ghost.position);q.quaternion.copy(ghost.quaternion);q.userData={id:selectedArt.id,title:selectedArt.title};scene.add(q);artworks.push(q);pp();log('Placed: '+selectedArt.title+' ('+artworks.length+')')};
+  document.getElementById('place').onclick=function(){if(!placement||!ghost.visible||!selectedArt)return;let w=ghost.userData&&ghost.userData.w?ghost.userData.w:1.2,h=ghost.userData&&ghost.userData.h?ghost.userData.h:0.9;let ratio=1;const tex2=texCache[selectedArt.id];if(tex2&&tex2.image&&tex2.image.width){ratio=tex2.image.width/tex2.image.height}else if(selectedArt.rw&&selectedArt.rh){ratio=selectedArt.rw/selectedArt.rh}const sr=w/h;if(ratio>sr)h=w/ratio;else w=h*ratio;const geo=new THREE.PlaneGeometry(w,h);let mat;const tex=texCache[selectedArt.id];if(tex)mat=new THREE.MeshStandardMaterial({map:tex,roughness:0.4,side:THREE.DoubleSide});else mat=new THREE.MeshStandardMaterial({color:0xd4b678,roughness:0.4,side:THREE.DoubleSide});const q=new THREE.Mesh(geo,mat);q.position.copy(ghost.position);q.quaternion.copy(ghost.quaternion);q.userData={id:selectedArt.id,title:selectedArt.title,artist:selectedArt.artist,desc:selectedArt.desc};scene.add(q);artworks.push(q);pp();log('Placed: '+selectedArt.title+' ('+artworks.length+')')};
 
   // Time UI
   const ts=document.getElementById('tSlower'),tp=document.getElementById('tPause'),tf=document.getElementById('tFaster');
@@ -220,7 +225,17 @@ function startUI(){
     if(mv){cam.position.x+=(sy*fwd+cy*str)*dt;cam.position.z+=(-cy*fwd+sy*str)*dt}
     cam.position.x=Math.max(BOUNDS.xMin+0.3,Math.min(BOUNDS.xMax-0.3,cam.position.x));cam.position.z=Math.max(BOUNDS.zMin+0.3,Math.min(BOUNDS.zMax-0.3,cam.position.z));
     if(mv){st.bp+=dt*12;st.im=true;st.st+=dt}else{st.im=false;st.st=0}const by=st.im?Math.sin(st.bp)*0.015:0,bx=st.im?Math.cos(st.bp*0.5)*0.005:0;if(st.st>0.5){st.st-=0.5;pf()}
-    shadowDisc.position.set(cam.position.x,0.02,cam.position.z);cam.position.x+=bx;cam.position.y=1.65+by;cam.lookAt(cam.position.x+sy*cp,cam.position.y-sp,cam.position.z-cy*cp);cam.position.x-=bx;cam.position.y=1.65;
+    shadowDisc.position.set(cam.position.x,0.02,cam.position.z);
+    // Proximity: show art card near placed artworks
+    let nearA=null,nearD=2.5;const ac=document.getElementById('artCard');
+    artworks.forEach(function(q){const d=cam.position.distanceTo(q.position);if(d<nearD){nearD=d;nearA=q}});
+    if(nearA&&nearA.userData.title){const v=new THREE.Vector3;nearA.getWorldPosition(v);v.y+=1;v.project(cam);
+      const sx=(v.x*0.5+0.5)*innerWidth,sy=(-v.y*0.5+0.5)*innerHeight;ac.style.display='block';
+      ac.style.left=Math.min(sx,innerWidth-190)+'px';ac.style.top=Math.max(sy-60,10)+'px';
+      ac.querySelector('.t2').textContent=nearA.userData.title;ac.querySelector('.a2').textContent=nearA.userData.artist||'';
+      if(ac.dataset.id!==nearA.userData.id){ac.dataset.id=nearA.userData.id;speak(nearA.userData.title+'。'+(nearA.userData.desc||''))}}
+    else{ac.style.display='none';ac.dataset.id=''}
+    cam.position.x+=bx;cam.position.y=1.65+by;cam.lookAt(cam.position.x+sy*cp,cam.position.y-sp,cam.position.z-cy*cp);cam.position.x-=bx;cam.position.y=1.65;
     if(placement){const dir=cam.getWorldDirection(new THREE.Vector3);let ns=null,nd2=3.0;
       for(let i=0;i<slots3D.length;i++){const s=slots3D[i],dx=s.pos.x-cam.position.x,dz=s.pos.z-cam.position.z,dist=Math.sqrt(dx*dx+dz*dz);if(dist<nd2&&dx*dir.x+dz*dir.z>0){nd2=dist;ns=s}}
       if(ns){ghost.position.copy(ns.pos);let nx=0,nz=0;if(Math.abs(ns.pos.z+5)<0.1){nx=0;nz=1}else if(Math.abs(ns.pos.z-5)<0.1){nx=0;nz=-1}else if(Math.abs(ns.pos.x-7.5)<0.1){nx=-1;nz=0}else if(Math.abs(ns.pos.x+7.5)<0.1){nx=1;nz=0}ghost.position.x+=nx*0.005;ghost.position.z+=nz*0.005;ghost.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(nx,0,nz));ghost.scale.set(ns.w/1.2,ns.h/0.9,1);ghost.userData={w:ns.w,h:ns.h};ghost.visible=true;document.getElementById('place').style.display='block'}
