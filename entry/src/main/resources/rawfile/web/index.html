@@ -70,11 +70,17 @@ log('Module loaded. THREE v'+THREE.REVISION);
 // Data
 const ARTWORKS=[
   {id:'mona_lisa',title:'蒙娜丽莎',artist:'Leonardo',rw:77,rh:53,desc:'晕染法调和了皮肤与空气的边界。她在看谁？没有人知道。'},
-  {id:'starry_night',title:'星月夜',artist:'van Gogh',rw:921,rh:737,desc:'漩涡般的夜空下，丝柏树如火焰升腾。梵高在圣雷米病房的窗外看见了宇宙。'},
   {id:'birth_of_venus',title:'维纳斯诞生',artist:'Botticelli',rw:1725,rh:2785,desc:'美之女神从贝壳上升起。风神吹送，春神迎接。古典神话的重生。'},
   {id:'school_of_athens',title:'雅典学院',artist:'Raphael',rw:500,rh:770,desc:'柏拉图指向天空，亚里士多德指向大地。整个西方思想史被定格为一次会议。'},
   {id:'creation_of_adam',title:'创造亚当',artist:'Michelangelo',rw:280,rh:570,desc:'即将相触的两根手指之间，留出了美术史上最有名的一厘米空隙。'},
-  {id:'primavera',title:'春',artist:'Primavera',rw:203,rh:314,desc:'维纳斯、三女神、墨丘利在橙树林里组成缓慢的舞步。五百种植物被精准描绘。'}
+  {id:'primavera',title:'春',artist:'Primavera',rw:203,rh:314,desc:'维纳斯、三女神、墨丘利在橙树林里组成缓慢的舞步。五百种植物被精准描绘。'},
+  {id:'last_supper',title:'最后的晚餐',artist:'Leonardo',rw:460,rh:880,desc:'耶稣宣布有人将背叛他的那一刻。十二门徒分为四组，情绪在透视消失点收束。'},
+  {id:'virgin_of_the_rocks',title:'岩间圣母',artist:'Leonardo',rw:199,rh:122,desc:'圣母、圣婴与天使组成金字塔构图。宗教场景罕见地让位于自然。'},
+  {id:'venus_of_urbino',title:'乌尔比诺的维纳斯',artist:'Titian',rw:119,rh:165,desc:'女神走下神坛，变成一位在卧室里与观者对视的女性。'},
+  {id:'sistine_madonna',title:'西斯廷圣母',artist:'Raphael',rw:265,rh:196,desc:'圣母抱着圣婴从云端走来。两位小天使已脱离了原作成为流行符号。'},
+  {id:'last_judgment',title:'最后的审判',artist:'Michelangelo',rw:1370,rh:1200,desc:'近四百具裸体灵魂被安置在基督审判的漩涡中。宗教情感被推向肉身的极致。'},
+  {id:'masaccio_trinity',title:'圣三位一体',artist:'Masaccio',rw:667,rh:317,desc:'西方美术史上第一次系统使用数学透视。观者仿佛真的望进一座凹陷的礼拜堂。'},
+  {id:'uccello_san_romano',title:'圣罗马诺之战',artist:'Uccello',rw:182,rh:323,desc:'倒地的长矛在地面上汇聚于一点——这是一场几何学家画的战争。'},
 ];
 const WALLS=[{n:[0,0,1],p:[0,0,-5],min:-7.5,max:7.5},{n:[0,0,-1],p:[0,0,5],min:-7.5,max:7.5},{n:[-1,0,0],p:[7.5,0,0],min:-5,max:5},{n:[1,0,0],p:[-7.5,0,0],min:-5,max:5}];
 function thumb(id){return window.THUMBS&&window.THUMBS[id]?window.THUMBS[id]:''}
@@ -238,7 +244,7 @@ function startUI(){
     cam.position.x+=bx;cam.position.y=1.65+by;cam.lookAt(cam.position.x+sy*cp,cam.position.y-sp,cam.position.z-cy*cp);cam.position.x-=bx;cam.position.y=1.65;
     if(placement){const dir=cam.getWorldDirection(new THREE.Vector3);let ns=null,nd2=3.0;
       for(let i=0;i<slots3D.length;i++){const s=slots3D[i],dx=s.pos.x-cam.position.x,dz=s.pos.z-cam.position.z,dist=Math.sqrt(dx*dx+dz*dz);if(dist<nd2&&dx*dir.x+dz*dir.z>0){nd2=dist;ns=s}}
-      if(ns){ghost.position.copy(ns.pos);let nx=0,nz=0;if(Math.abs(ns.pos.z+5)<0.1){nx=0;nz=1}else if(Math.abs(ns.pos.z-5)<0.1){nx=0;nz=-1}else if(Math.abs(ns.pos.x-7.5)<0.1){nx=-1;nz=0}else if(Math.abs(ns.pos.x+7.5)<0.1){nx=1;nz=0}ghost.position.x+=nx*0.005;ghost.position.z+=nz*0.005;ghost.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(nx,0,nz));ghost.scale.set(ns.w/1.2,ns.h/0.9,1);ghost.userData={w:ns.w,h:ns.h};ghost.visible=true;document.getElementById('place').style.display='block'}
+      if(ns){ghost.position.copy(ns.pos);let nx=0,nz=0;if(Math.abs(ns.pos.z+5)<0.1){nx=0;nz=1}else if(Math.abs(ns.pos.z-5)<0.1){nx=0;nz=-1}else if(Math.abs(ns.pos.x-7.5)<0.1){nx=-1;nz=0}else if(Math.abs(ns.pos.x+7.5)<0.1){nx=1;nz=0}ghost.position.x+=nx*0.02;ghost.position.z+=nz*0.02;ghost.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(nx,0,nz));ghost.scale.set(ns.w/1.2,ns.h/0.9,1);ghost.userData={w:ns.w,h:ns.h};ghost.visible=true;document.getElementById('place').style.display='block'}
       else{ghost.visible=false;document.getElementById('place').style.display='none'}}
     else{ghost.visible=false;document.getElementById('place').style.display='none'}
     renderer.render(scene,cam)}

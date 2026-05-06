@@ -12,7 +12,13 @@ ARTWORK_MAP = {
     "school_of_athens": "school_of_athens.jpg",
     "creation_of_adam": "creation_of_adam.jpg",
     "primavera": "botticelli_primavera.jpg",
-    "starry_night": "birth_of_venus.jpg",  # fallback for starry_night
+    "last_supper": "leonardo_last_supper.jpg",
+    "virgin_of_the_rocks": "virgin_of_the_rocks.jpg",
+    "venus_of_urbino": "venus_of_urbino.jpg",
+    "sistine_madonna": "raphael_sistine_madonna.jpg",
+    "last_judgment": "michelangelo_last_judgment.jpg",
+    "masaccio_trinity": "masaccio_trinity.jpg",
+    "uccello_san_romano": "uccello_san_romano.jpg",
 }
 
 thumbs = {}
