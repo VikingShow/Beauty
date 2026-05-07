@@ -325,6 +325,10 @@ document.getElementById('exitBtn').onclick=function(){
       cam.lookAt(transCam.x,transCam.y,transCam.z);if(t>=1)transCam=null;renderer.render(scene,cam);return}
     if(inPainting){pj();const sy2=Math.sin(st.yaw),cy2=Math.cos(st.yaw),cp2=Math.cos(st.pitch);
       cam.position.x+=(sy2*jm.fwd+cy2*jm.str)*dt;cam.position.z+=(-cy2*jm.fwd+sy2*jm.str)*dt;
+      // Ground collision: raycast down, clamp to terrain + eye height
+      const pr=new THREE.Raycaster(cam.position,new THREE.Vector3(0,-1,0),0,20);if(paintingWorld){const ph=pr.intersectObjects(paintingWorld.children,true);if(ph.length>0)cam.position.y=Math.max(cam.position.y,ph[0].point.y+1.65)}
+      // Boundary: 12m radius
+      const hd=Math.sqrt(cam.position.x*cam.position.x+cam.position.z*cam.position.z);if(hd>12){cam.position.x*=12/hd;cam.position.z*=12/hd}
       cam.lookAt(cam.position.x+sy2*cp2,cam.position.y-Math.sin(st.pitch),cam.position.z-cy2*cp2);
       renderer.render(scene,cam);return}
     pj();
