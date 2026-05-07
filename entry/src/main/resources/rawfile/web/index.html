@@ -295,8 +295,9 @@ document.getElementById('exitBtn').onclick=function(){
   const st={yaw:0,pitch:0,bp:0,im:false,st:0,keys:{}};let lt=performance.now();
   function loop(now){requestAnimationFrame(loop);let dt=(now-lt)/1000;lt=now;if(dt>0.05)dt=0.05;if(dt<=0)dt=0.016;
     if(inPainting){pj();const sy2=Math.sin(st.yaw),cy2=Math.cos(st.yaw),cp2=Math.cos(st.pitch);
-      if(joyMove.fwd||joyMove.str){cam.position.x+=(sy2*joyMove.fwd+cy2*joyMove.str)*dt;cam.position.z+=(-cy2*joyMove.fwd+sy2*joyMove.str)*dt}
+      cam.position.x+=(sy2*jm.fwd+cy2*jm.str)*dt;cam.position.z+=(-cy2*jm.fwd+sy2*jm.str)*dt;
       cam.lookAt(cam.position.x+sy2*cp2,cam.position.y-Math.sin(st.pitch),cam.position.z-cy2*cp2);
+      if(paintingWorld&&paintingWorld.children.length>3)paintingWorld.children[3].rotation.y+=dt*0.3; // rotate particles
       renderer.render(scene,cam);return}
     pj();
     const sy=Math.sin(st.yaw),cy=Math.cos(st.yaw),cp=Math.cos(st.pitch),sp=Math.sin(st.pitch);
