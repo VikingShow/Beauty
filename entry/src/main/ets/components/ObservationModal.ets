@@ -8,12 +8,14 @@ import { Clue, clueForExhibit } from '../scenes/Clues';
  * - 无线索：展示"此画今夜静默如常"
  *
  * 通过 @Prop visible 控制显隐，@Watch 触发淡入淡出。
+ * 可选 clue 属性：当外部已计算好线索时传入，避免从 Clues.ets 重复查找（中国馆需此功能）。
  */
 @Component
 export struct ObservationModal {
   @Prop @Watch('onVisibleChange') visible: boolean = false;
   @Prop exhibitId: string = '';
   @Prop alreadyCollected: boolean = false;
+  @Prop clue: Clue | undefined = undefined;  // 外部线索，不为 undefined 时优先使用
   onClose: () => void = () => {};
   onCollect: (clueId: string) => void = () => {};
 
@@ -37,6 +39,12 @@ export struct ObservationModal {
       this.contentOpacity = 0;
       this.contentOffsetY = 16;
     }
+  }
+
+  /** 优先使用外部传入的 clue，未传入时从 Clues.ets 查找。 */
+  private getClue(): Clue | undefined {
+    if (this.clue !== undefined) return this.clue;
+    return clueForExhibit(this.exhibitId);
   }
 
   build() {
@@ -150,7 +158,7 @@ export struct ObservationModal {
           .borderColor('#d4b678')
           .borderWidth(1)
           .onClick(() => {
-            const c: Clue | undefined = clueForExhibit(this.exhibitId);
+            const c: Clue | undefined = this.getClue();
             if (c !== undefined && !this.alreadyCollected) {
               this.onCollect(c.id);
             }
@@ -202,7 +210,7 @@ export struct ObservationModal {
   }
 
   private hasClue(): boolean {
-    return clueForExhibit(this.exhibitId) !== undefined;
+    return this.getClue() !== undefined;
   }
 
   private getTitleZh(): string {
@@ -216,17 +224,17 @@ export struct ObservationModal {
   }
 
   private getOrderLabel(): string {
-    const c: Clue | undefined = clueForExhibit(this.exhibitId);
+    const c: Clue | undefined = this.getClue();
     return c !== undefined ? c.orderLabel : '';
   }
 
   private getDetailText(): string {
-    const c: Clue | undefined = clueForExhibit(this.exhibitId);
+    const c: Clue | undefined = this.getClue();
     return c !== undefined ? c.detailText : '';
   }
 
   private getWhisper(): string {
-    const c: Clue | undefined = clueForExhibit(this.exhibitId);
+    const c: Clue | undefined = this.getClue();
     return c !== undefined ? c.whisper : '';
   }
 }

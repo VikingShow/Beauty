@@ -11,13 +11,16 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { AABB2, FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
 import { DAVID_LAYOUT, DAVID_WAYPOINTS, SceneFeature, Waypoint } from '../scenes/Waypoint';
-import { nearestExhibitId } from '../scenes/Exhibits';
+import { nearestExhibitId, findExhibit, Exhibit } from '../scenes/Exhibits';
 import { clueForExhibit, isCollected, TOTAL_CLUE_COUNT, Clue } from '../scenes/Clues';
 import { Minimap } from '../components/Minimap';
 import { Joystick } from '../components/Joystick';
 import { ExhibitCard } from '../components/ExhibitCard';
 import { ObservationModal } from '../components/ObservationModal';
 import { NotebookModal } from '../components/NotebookModal';
+import { SpeechEngine } from '../utils/SpeechEngine';
+import { BgmEngine } from '../utils/BgmEngine';
+import { SettingsModal } from '../components/SettingsModal';
 
 const DOMAIN = 0x0102;
 
@@ -29,7 +32,7 @@ interface RGBA {
 }
 
 /**
- * 第一关 · David
+ * 大卫馆 · 根特悬案
  *
  * 资产：Art Gallery by Zeps3D (CC-BY 4.0)
  * 模型单位：厘米；场景内有雕像与树，玩家在其间巡游。
@@ -46,7 +49,7 @@ struct DavidScene {
   @State private currentExhibitId: string = '';
   @State private loadingOpacity: number = 1;     // 加载覆盖层不透明度（1→0 淡出）
   @State private sceneOpacity: number = 0;       // 3D 场景不透明度（0→1 淡入）
-  @State private loadingDots: string = '';       // "第一关 · David 加载中" 后面的跳动省略号
+  @State private loadingDots: string = '';       // "大卫馆 加载中" 后面的跳动省略号
   private dotsTimer: number | undefined = undefined;
 
   // —— 根特悬案（3A）——
@@ -62,6 +65,11 @@ struct DavidScene {
 
   private sceneInstance: Scene | undefined = undefined;
   private controller: FirstPersonCameraController = new FirstPersonCameraController(DAVID_WAYPOINTS[0]);
+  private speech: SpeechEngine = SpeechEngine.getInstance();
+  private bgm: BgmEngine = BgmEngine.getInstance();
+  @State private settingsVisible: boolean = false;
+  @State private voiceOn: boolean = true;
+  @State private musicOn: boolean = false;
 
   async aboutToAppear(): Promise<void> {
     // 启动加载提示的省略号动画
@@ -74,6 +82,13 @@ struct DavidScene {
       const next: string = nearestExhibitId(this.playerX, this.playerZ);
       if (next !== this.currentExhibitId) {
         this.currentExhibitId = next;
+        // 走近新画作时 AI 语音播报
+        if (next !== '') {
+          const e: Exhibit | undefined = findExhibit(next);
+          if (e !== undefined) {
+            this.speech.speak(e.titleZh + '。' + e.artist + '。' + e.description);
+          }
+        }
       }
     });
 
@@ -145,6 +160,9 @@ struct DavidScene {
 
       this.sceneInstance = scene;
       this.sceneReady = true;
+      // 初始化语音引擎 + 背景音乐
+      this.speech.init();
+      this.bgm.init(getContext(this));
       // 场景就绪：3D 立即淡入，加载层延后 120ms 淡出，形成交叉过渡
       animateTo({ duration: 500, curve: Curve.EaseInOut }, () => {
         this.sceneOpacity = 1;
@@ -170,6 +188,7 @@ struct DavidScene {
   aboutToDisappear(): void {
     this.controller.detach();
     this.stopDotsAnimation();
+    this.speech.stop();
   }
 
   private startDotsAnimation(): void {
@@ -204,6 +223,8 @@ struct DavidScene {
     animateTo({ duration: 900, curve: Curve.EaseIn }, () => {
       this.introOpacity = 1;
     });
+    // AI 语音旁白开场
+    this.speech.speak('午夜钟声敲响。1934年，根特祭坛画的公正法官被窃，至今下落不明。传说，原作藏于这间美术馆的某幅画板之后。画中之物，今夜开始低语。');
     setTimeout(() => {
       animateTo({ duration: 900, curve: Curve.EaseOut }, () => {
         this.introOpacity = 0;
@@ -234,6 +255,17 @@ struct DavidScene {
     if (isCollected(clueId, this.discoveredClueIds)) return;
     this.discoveredClueIds = this.discoveredClueIds.concat([clueId]);
     this.modalAlreadyCollected = true;
+    // AI 语音播报窃语
+    const c: Clue | undefined = clueForExhibit(this.modalExhibitId);
+    if (c !== undefined) {
+      this.speech.speakNow(c.whisper);
+    }
+    // 1.5 秒后自动关闭观察模态
+    setTimeout(() => {
+      if (this.modalVisible && this.modalExhibitId === this.currentExhibitId) {
+        this.modalVisible = false;
+      }
+    }, 1500);
   }
 
   private closeObservation(): void {
@@ -295,7 +327,7 @@ struct DavidScene {
             router.back();
           })
 
-        Text('第一关 · David  |  拖动转视角 · 点小地图或下方按钮切换')
+        Text('大卫馆  |  拖动转视角 · 点小地图或下方按钮切换')
           .fontSize(14)
           .fontColor('#d4b678')
           .margin({ left: 12 })
@@ -359,6 +391,23 @@ struct DavidScene {
         this.openNotebook();
       })
 
+      // 设置按钮（齿轮）— 右上角
+      Row() {
+        Image($r('app.media.icon_gear'))
+          .width(18)
+          .height(18)
+          .fillColor('#8a8a9a')
+      }
+      .width(36).height(36)
+      .justifyContent(FlexAlign.Center)
+      .backgroundColor('#E61a1a2e')
+      .borderColor('#448a8a9a')
+      .borderWidth(1)
+      .borderRadius(18)
+      .position({ x: '100%', y: 76 })
+      .markAnchor({ x: 44, y: 0 })
+      .onClick(() => { this.settingsVisible = true; })
+
       // 底部航点切换条
       Row({ space: 12 }) {
         ForEach(DAVID_WAYPOINTS, (wp: Waypoint) => {
@@ -382,7 +431,7 @@ struct DavidScene {
       // 加载覆盖层：放在最后，覆盖所有 UI chrome，淡出后才露出场景+按钮
       if (this.loadingOpacity > 0) {
         Column({ space: 28 }) {
-          Text('第一关')
+          Text('大卫馆')
             .fontSize(14)
             .fontColor('#8a8a9a')
             .letterSpacing(6)
@@ -460,6 +509,22 @@ struct DavidScene {
         onCollect: (clueId: string) => {
           this.collectClue(clueId);
         }
+      })
+
+      // 设置模态
+      SettingsModal({
+        visible: this.settingsVisible,
+        voiceOn: this.voiceOn,
+        musicOn: this.musicOn,
+        onClose: (): void => { this.settingsVisible = false; },
+        onVoiceToggle: (): void => {
+          this.voiceOn = !this.voiceOn;
+          this.speech.toggleMute();
+        },
+        onMusicToggle: (): void => {
+          this.musicOn = !this.musicOn;
+          this.bgm.toggleMute();
+        },
       })
 
       // 侦探笔记模态：最顶层

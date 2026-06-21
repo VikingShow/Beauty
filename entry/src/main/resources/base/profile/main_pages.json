@@ -4,6 +4,8 @@
     "pages/GameScene",
     "pages/GalleryScene",
     "pages/DavidScene",
+    "pages/ChineseGalleryScene",
+    "pages/SpatialReconPilot",
     "pages/ThreeJsHost"
   ]
 }

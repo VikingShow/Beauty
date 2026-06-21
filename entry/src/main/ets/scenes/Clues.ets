@@ -1,132 +1,106 @@
-import { DAVID_EXHIBITS, Exhibit } from './Exhibits';
-
 /**
  * 根特悬案 · 线索数据
  *
- * 1934 年 Van Eyck《根特祭坛画 · 公正法官》被窃，至今未寻回。
- * 传说原作被藏于本馆某幅画板的背后。6 条线索散布在其他画作中，
- * 集齐即可唯一锁定宿主画（Fra Angelico《基督下十字架》· 1432）。
- *
- * 每条 clue 的 `excludes` 字段列出被该线索排除的画作 id，
- * 用于 3B 笔记本中的自动筛选（已集线索 → 剩余候选）。
+ * 1432 年 Van Eyck《根特祭坛画 · 公正法官》面板被窃，至今未寻回。
+ * 传说原作藏于本馆某幅画的背后。6 条线索散布在各画作中，
+ * 集齐即可锁定宿主画：Antonello da Messina《男子肖像》。
  */
 
+import { DAVID_EXHIBITS, Exhibit } from './Exhibits';
+
 export interface Clue {
-  id: string;              // 'clue_year', 'clue_facing', ...
-  hostExhibitId: string;   // 该线索"附身"在哪幅画里（玩家走近它时触发）
-  orderLabel: string;      // '第一声低语' / '第二声低语' ...
-  detailText: string;      // 观察模态里的"发现"叙述
-  whisper: string;         // 线索本体（画中人的一句窃语）
-  criterion: string;       // 笔记本里给玩家看的"此线索代表什么筛选条件"
-  excludes: string[];      // 该线索排除的画作 id 列表
+  id: string;
+  hostExhibitId: string;
+  orderLabel: string;
+  detailText: string;
+  whisper: string;
+  criterion: string;
+  excludes: string[];
 }
 
-export const TARGET_EXHIBIT_ID: string = 'fra_angelico_deposition';
+export const TARGET_EXHIBIT_ID: string = 'antonello_portrait';
 export const TOTAL_CLUE_COUNT: number = 6;
 
 export const DAVID_CLUES: Clue[] = [
   {
-    id: 'clue_year',
-    hostExhibitId: 'leonardo_last_supper',
+    id: 'clue_century',
+    hostExhibitId: 'uccello_san_romano',
     orderLabel: '第一声低语',
-    detailText: '午夜钟声将酒杯的倒影震出一丝涟漪，杯底浮现一行极细的字。',
-    whisper: '我的年岁，比这桌上的晚餐年长六十余载。',
-    criterion: '宿主画完成于 1435 年以前',
-    // 保留：masaccio_trinity(1425–28), fra_angelico_deposition(1432)
+    detailText: '战场的尘土落定，长矛的阴影在地面汇成精确的网格——网格深处浮现一行古老的文字。',
+    whisper: '我栖身于十五世纪的画中。哥伦布尚未起航，达芬奇还是个孩子。',
+    criterion: '画作完成于 15 世纪（1400–1499）',
     excludes: [
-      'leonardo_last_supper', 'mona_lisa', 'virgin_of_the_rocks',
-      'birth_of_venus', 'botticelli_primavera', 'venus_of_urbino',
-      'mantegna_triumphs', 'uccello_san_romano',
-      'school_of_athens', 'creation_of_adam', 'raphael_sistine_madonna',
-      'michelangelo_last_judgment', 'bellini_resurrection',
-      'piero_baptism', 'giorgione_tempest', 'antonello_portrait',
+      'mona_lisa', 'school_of_athens', 'david_napoleon',
+      'bruegel_hunters', 'vermeer_pearl_earring', 'vermeer_milkmaid',
+      'friedrich_wanderer', 'renoir_luncheon', 'hopper_nighthawks',
+      'monet_sunrise', 'klimt_kiss', 'degas_dance', 'giorgione_tempest',
     ],
   },
   {
-    id: 'clue_facing',
-    hostExhibitId: 'bellini_resurrection',
+    id: 'clue_portrait',
+    hostExhibitId: 'mona_lisa',
     orderLabel: '第二声低语',
-    detailText: '基督复活的晨光里，你仿佛听见一缕低微的呼吸。',
-    whisper: '我面朝晨光升起的方向。',
-    criterion: '画面朝东（+X）',
-    // 保留：virgin_of_the_rocks, masaccio_trinity, fra_angelico_deposition,
-    //       michelangelo_last_judgment, bellini_resurrection, piero_baptism
+    detailText: '蒙娜丽莎的微笑微微一颤——她没有开口，但你听见了一句话。',
+    whisper: '我栖身于一幅肖像画。画中只有一人——或两人——在宁静中对视。',
+    criterion: '画科为肖像画（单人/双人肖像，非群像/历史/风景）',
     excludes: [
-      'leonardo_last_supper', 'mona_lisa', 'birth_of_venus',
-      'botticelli_primavera', 'venus_of_urbino', 'mantegna_triumphs',
-      'uccello_san_romano', 'school_of_athens', 'creation_of_adam',
-      'raphael_sistine_madonna', 'giorgione_tempest', 'antonello_portrait',
+      'botticelli_primavera', 'school_of_athens', 'david_napoleon',
+      'mantegna_triumphs', 'bruegel_hunters', 'vermeer_milkmaid',
+      'friedrich_wanderer', 'renoir_luncheon', 'hopper_nighthawks',
+      'giorgione_tempest', 'uccello_san_romano', 'monet_sunrise',
+      'klimt_kiss', 'degas_dance',
     ],
   },
   {
-    id: 'clue_mother',
-    hostExhibitId: 'raphael_sistine_madonna',
+    id: 'clue_small',
+    hostExhibitId: 'vermeer_pearl_earring',
     orderLabel: '第三声低语',
-    detailText: '圣母怀中的圣婴忽然望向你，嘴角微微一动。',
-    whisper: '我的宿主画中，也有一位母亲的眼泪。',
-    criterion: '画中绘有圣母',
-    // 保留：virgin_of_the_rocks, masaccio_trinity,
-    //       fra_angelico_deposition, raphael_sistine_madonna
+    detailText: '珍珠耳环微光一闪——那光芒突然强烈得不像是颜料。',
+    whisper: '我栖身于一小幅画中。不足一臂之长，需靠得很近才能看清我的秘密。',
+    criterion: '画作最长边 < 90 cm',
     excludes: [
-      'leonardo_last_supper', 'mona_lisa', 'birth_of_venus',
-      'botticelli_primavera', 'venus_of_urbino', 'mantegna_triumphs',
-      'uccello_san_romano', 'school_of_athens', 'creation_of_adam',
-      'michelangelo_last_judgment', 'bellini_resurrection',
-      'piero_baptism', 'giorgione_tempest', 'antonello_portrait',
+      'botticelli_primavera', 'school_of_athens', 'david_napoleon',
+      'mantegna_triumphs', 'bruegel_hunters', 'friedrich_wanderer',
+      'renoir_luncheon', 'hopper_nighthawks', 'uccello_san_romano',
+      'monet_sunrise', 'klimt_kiss',
     ],
   },
   {
-    id: 'clue_panel',
-    hostExhibitId: 'masaccio_trinity',
+    id: 'clue_italian',
+    hostExhibitId: 'bruegel_hunters',
     orderLabel: '第四声低语',
-    detailText: '凹陷的礼拜堂墙壁深处，传来一声木板的轻叩。',
-    whisper: '我非壁画——我栖身于木板之上。',
-    criterion: '载体为木板（而非壁画）',
-    // 排除壁画：leonardo_last_supper(tempera on plaster), masaccio_trinity,
-    //          school_of_athens, creation_of_adam, michelangelo_last_judgment
+    detailText: '雪地上呼出的白雾聚成一个词——不是佛兰芒语，不是荷兰语，不是德语。',
+    whisper: '我的宿主画家来自南方。橄榄树、大理石与拉丁语的土地。',
+    criterion: '画家为意大利人',
     excludes: [
-      'leonardo_last_supper', 'masaccio_trinity',
-      'school_of_athens', 'creation_of_adam',
-      'michelangelo_last_judgment',
+      'van_eyck_arnolfini', 'bruegel_hunters', 'vermeer_pearl_earring',
+      'vermeer_milkmaid', 'friedrich_wanderer', 'renoir_luncheon',
+      'hopper_nighthawks', 'monet_sunrise', 'klimt_kiss', 'degas_dance',
     ],
   },
   {
-    id: 'clue_nude',
-    hostExhibitId: 'venus_of_urbino',
+    id: 'clue_island',
+    hostExhibitId: 'giorgione_tempest',
     orderLabel: '第五声低语',
-    detailText: '维纳斯在床榻上望向你，轻声说出一句不属于她的话。',
-    whisper: '我的宿主画家，此生从未绘过一具裸体。',
-    criterion: '画家从未绘过裸体',
-    // 保留：fra_angelico_deposition, piero_baptism, antonello_portrait
+    detailText: '暴风雨的闪电劈开天空，照亮了远方海面上孤岛的轮廓——一座由石头与柠檬树构成的岛。',
+    whisper: '我栖身于岛屿孕育的画中。不是大陆——是海中央。',
+    criterion: '画家生于西西里岛',
     excludes: [
-      'leonardo_last_supper', 'mona_lisa', 'virgin_of_the_rocks',
-      'masaccio_trinity', 'birth_of_venus', 'botticelli_primavera',
-      'venus_of_urbino', 'mantegna_triumphs', 'uccello_san_romano',
-      'school_of_athens', 'creation_of_adam', 'raphael_sistine_madonna',
-      'michelangelo_last_judgment', 'bellini_resurrection',
-      'giorgione_tempest',
+      'mona_lisa', 'botticelli_primavera', 'school_of_athens',
+      'david_napoleon', 'mantegna_triumphs', 'uccello_san_romano',
     ],
   },
   {
-    id: 'clue_friar',
-    hostExhibitId: 'school_of_athens',
+    id: 'clue_flemish',
+    hostExhibitId: 'van_eyck_arnolfini',
     orderLabel: '第六声低语',
-    detailText: '哲学家的长袍随风微动，一道身影从廊柱之后静静现身。',
-    whisper: '我的宿主画家，身披黑白修道服。',
-    criterion: '画家是多明我会修士',
-    // 保留：fra_angelico_deposition（唯一多明我会画家）
-    excludes: [
-      'leonardo_last_supper', 'mona_lisa', 'virgin_of_the_rocks',
-      'masaccio_trinity', 'birth_of_venus', 'botticelli_primavera',
-      'venus_of_urbino', 'mantegna_triumphs', 'uccello_san_romano',
-      'school_of_athens', 'creation_of_adam', 'raphael_sistine_madonna',
-      'michelangelo_last_judgment', 'bellini_resurrection',
-      'piero_baptism', 'giorgione_tempest', 'antonello_portrait',
-    ],
+    detailText: '凸面镜里映出访客的身影——他说了一句不属于这个时空的话。',
+    whisper: '我的宿主从北方学会了用油调和颜料。在那之前，意大利人只用蛋清。',
+    criterion: '画家以引入弗拉芒油画技法至意大利而著称',
+    excludes: [],
   },
 ];
 
-/** 给定画的 id，返回附着其上的线索（若有）。 */
 export function clueForExhibit(exhibitId: string): Clue | undefined {
   for (const c of DAVID_CLUES) {
     if (c.hostExhibitId === exhibitId) return c;
@@ -134,7 +108,6 @@ export function clueForExhibit(exhibitId: string): Clue | undefined {
   return undefined;
 }
 
-/** 按 id 查找线索。 */
 export function findClueById(id: string): Clue | undefined {
   for (const c of DAVID_CLUES) {
     if (c.id === id) return c;
@@ -142,7 +115,6 @@ export function findClueById(id: string): Clue | undefined {
   return undefined;
 }
 
-/** 判断某线索是否已被收集（在传入的已收集列表中）。 */
 export function isCollected(clueId: string, collected: string[]): boolean {
   for (const id of collected) {
     if (id === clueId) return true;
@@ -157,11 +129,6 @@ function containsId(arr: string[], id: string): boolean {
   return false;
 }
 
-/**
- * 根据已收集的线索计算剩余候选画作 id。
- * 没收集任何线索时返回全部 18 幅画；
- * 集齐 6 条时剩 fra_angelico_deposition 唯一候选。
- */
 export function candidateExhibitIds(collectedClueIds: string[]): string[] {
   const excluded: string[] = [];
   for (const clueId of collectedClueIds) {
@@ -178,7 +145,6 @@ export function candidateExhibitIds(collectedClueIds: string[]): string[] {
   return result;
 }
 
-/** 某画是否仍是候选（未被任何已集线索排除）。 */
 export function isCandidate(exhibitId: string, collectedClueIds: string[]): boolean {
   const ids: string[] = candidateExhibitIds(collectedClueIds);
   return containsId(ids, exhibitId);

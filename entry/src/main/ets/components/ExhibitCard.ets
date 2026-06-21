@@ -17,6 +17,7 @@ import { Exhibit, findExhibit } from '../scenes/Exhibits';
 export struct ExhibitCard {
   @Prop @Watch('onIdChange') exhibitId: string = '';
   @Prop clueState: string = 'none';
+  @Prop exhibit: Exhibit | undefined = undefined;  // 外部展品数据，不为 undefined 时优先使用
   onObserve: () => void = () => {};
 
   // 显示层状态：缓存上一次展品的全部字段，淡出时文字不消失
@@ -40,7 +41,7 @@ export struct ExhibitCard {
   }
 
   private loadFields(id: string): void {
-    const e: Exhibit | undefined = findExhibit(id);
+    const e: Exhibit | undefined = this.exhibit !== undefined ? this.exhibit : findExhibit(id);
     if (e === undefined) {
       this.hasContent = false;
       return;
@@ -57,8 +58,8 @@ export struct ExhibitCard {
 
   onIdChange(): void {
     const hasId: boolean = this.exhibitId !== '';
-    // 切换画作时重置展开态
-    this.collapsed = false;
+    // 切换画作时默认最小化，不遮挡 3D 视野
+    this.collapsed = true;
     if (hasId && this.hasContent) {
       // 切换：先淡出旧卡 → 换内容 → 淡入新卡
       animateTo({ duration: 180, curve: Curve.EaseOut }, () => {
@@ -100,6 +101,11 @@ export struct ExhibitCard {
   @Builder
   buildCollapsedBanner() {
     Row({ space: 10 }) {
+      if (this.clueState === 'available') {
+        Image($r('app.media.icon_flame'))
+          .width(14).height(14)
+          .fillColor('#d4b678')
+      }
       Text(this.titleZh)
         .fontSize(15)
         .fontWeight(FontWeight.Medium)
@@ -113,8 +119,8 @@ export struct ExhibitCard {
     }
     .padding({ left: 18, right: 14, top: 10, bottom: 10 })
     .backgroundColor('#F01a1a2e')
-    .borderColor('#d4b678')
-    .borderWidth(1)
+    .borderColor(this.cardBorder())
+    .borderWidth(this.clueState === 'available' ? 2 : 1)
     .borderRadius(20)
     .onClick(() => {
       this.collapsed = false;
@@ -124,14 +130,21 @@ export struct ExhibitCard {
   @Builder
   buildFullCard() {
     Column({ space: 6 }) {
-      // 头部：标题 + 右上角收起按钮
+      // 头部：标题 + 线索标记 + 右上角收起按钮
       Row() {
         Column({ space: 2 }) {
-          Text(this.titleZh)
-            .fontSize(22)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#f5e6c8')
-            .letterSpacing(2)
+          Row({ space: 8 }) {
+            Text(this.titleZh)
+              .fontSize(22)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#f5e6c8')
+              .letterSpacing(2)
+            if (this.clueState === 'available') {
+              Image($r('app.media.icon_flame'))
+                .width(18).height(18)
+                .fillColor('#d4b678')
+            }
+          }
 
           Text(this.titleEn + '  ·  ' + this.year)
             .fontSize(12)
@@ -220,16 +233,22 @@ export struct ExhibitCard {
     .width(520)
     .padding({ left: 20, right: 14, top: 12, bottom: 14 })
     .backgroundColor('#F01a1a2e')
-    .borderColor('#d4b678')
-    .borderWidth(1)
+    .borderColor(this.cardBorder())
+    .borderWidth(this.clueState === 'available' ? 2 : 1)
     .borderRadius(12)
     .alignItems(HorizontalAlign.Start)
   }
 
+  private cardBorder(): string {
+    if (this.clueState === 'available') return '#d4b678';
+    if (this.clueState === 'collected') return '#b9a57a88';
+    return '#d4b67866';
+  }
+
   private observeText(): string {
-    if (this.clueState === 'collected') return '已观察';
-    if (this.clueState === 'available') return '深入观察';
-    return '端详';
+    if (this.clueState === 'collected') return '已收入笔记';
+    if (this.clueState === 'available') return '发现线索';
+    return '端 详';
   }
 
   private observeBg(): string {

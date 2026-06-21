@@ -35,6 +35,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;font-family:
 #artCard .a2{font-size:11px;color:#b9a57a}
 #enterBtn{position:fixed;top:55%;left:50%;transform:translateX(-50%);z-index:12;display:none;background:#d4b678;color:#0a0a1a;border:none;border-radius:22px;padding:10px 28px;font-size:16px;font-weight:bold;cursor:pointer}
 #exitBtn{position:fixed;top:12px;right:12px;z-index:12;display:none;background:rgba(26,26,46,0.8);border:1px solid #d4b678;color:#d4b678;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer}
+#jumpBtn{position:fixed;bottom:100px;right:28px;z-index:12;display:none;background:rgba(212,182,120,0.25);border:2px solid #d4b678;color:#d4b678;border-radius:50%;width:56px;height:56px;font-size:16px;font-weight:bold;cursor:pointer}
 #sceneSel{position:fixed;top:12px;left:12px;z-index:12;display:flex;gap:4px}
 #sceneSel button{background:rgba(26,26,46,0.8);border:1px solid rgba(212,182,120,0.3);color:#8a8a9a;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer}
 #sceneSel button.on{background:rgba(212,182,120,0.2);border-color:#d4b678;color:#d4b678}
@@ -46,7 +47,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;font-family:
 <input type="file" id="fileImport" accept=".json" style="display:none">
 <div id="hotbar"><div class="hot-item up">＋</div></div>
 <div id="artCard"><div class="t2"></div><div class="a2"></div></div>
-<button id="enterBtn">走入画中</button><button id="exitBtn">← 返回展厅</button>
+<button id="enterBtn">走入画中</button><button id="exitBtn">← 返回展厅</button><button id="jumpBtn">跳</button>
 <div id="cross">＋</div>
 <button id="place">放置</button>
 <div id="info"></div>
@@ -249,7 +250,7 @@ function startUI(){
       document.getElementById('hotbar').style.display='none';document.getElementById('sceneSel').style.display='none';
       document.getElementById('cross').style.display='none';document.getElementById('place').style.display='none';
       document.getElementById('artCard').style.display='none';document.getElementById('exitBtn').style.display='block';
-      document.getElementById('enterBtn').style.display='none';
+      document.getElementById('enterBtn').style.display='none';document.getElementById('jumpBtn').style.display='block';
       if(gltfRoot)gltfRoot.visible=false;testCube.visible=false;grid.visible=false;ghost.visible=false;
       artworks.forEach(function(a){a.visible=false});
       paintingWorld=new THREE.Group;scene.add(paintingWorld);
@@ -303,11 +304,14 @@ function startUI(){
 
   document.getElementById('enterBtn').onclick=function(){
   const idx=parseInt(this.dataset.target||'-1');if(idx>=0&&idx<artworks.length)enterPainting(artworks[idx])};
+document.getElementById('jumpBtn').onclick=function(){jump()};
 document.getElementById('exitBtn').onclick=function(){
     inPainting=false;paintingData=null;
     // Show gallery UI
     document.getElementById('hotbar').style.display='';document.getElementById('sceneSel').style.display='';
     document.getElementById('exitBtn').style.display='none';document.getElementById('enterBtn').style.display='none';
+    document.getElementById('jumpBtn').style.display='none';
+    pwVy=0;pwOnGround=false;
     // Show gallery scene
     if(gltfRoot)gltfRoot.visible=true;testCube.visible=false;grid.visible=false;
     artworks.forEach(function(a){a.visible=true});
@@ -319,14 +323,17 @@ document.getElementById('exitBtn').onclick=function(){
 
   // Loop
   const st={yaw:0,pitch:0,bp:0,im:false,st:0,keys:{}};let lt=performance.now();
+  let pwVy=0,pwOnGround=false; // 画中世界物理：垂直速度 + 着地状态
+  function jump(){if(pwOnGround){pwVy=5.0;pwOnGround=false}} // 跳跃
   function loop(now){requestAnimationFrame(loop);let dt=(now-lt)/1000;lt=now;if(dt>0.05)dt=0.05;if(dt<=0)dt=0.016;
     if(transCam){transT+=dt;const t=Math.min(1,transT/transDur),ease=t<0.5?2*t*t:-1+(4-2*t)*t;
       cam.position.set(transCam.x+(transCam.tx-transCam.x)*ease,transCam.y+(transCam.ty-transCam.y)*ease,transCam.z+(transCam.tz-transCam.z)*ease);
       cam.lookAt(transCam.x,transCam.y,transCam.z);if(t>=1)transCam=null;renderer.render(scene,cam);return}
     if(inPainting){pj();const sy2=Math.sin(st.yaw),cy2=Math.cos(st.yaw),cp2=Math.cos(st.pitch);
       cam.position.x+=(sy2*jm.fwd+cy2*jm.str)*dt;cam.position.z+=(-cy2*jm.fwd+sy2*jm.str)*dt;
-      // Ground collision: raycast down, clamp to terrain + eye height
-      const pr=new THREE.Raycaster(cam.position,new THREE.Vector3(0,-1,0),0,20);if(paintingWorld){const ph=pr.intersectObjects(paintingWorld.children,true);if(ph.length>0)cam.position.y=Math.max(cam.position.y,ph[0].point.y+1.65)}
+      // 物理：重力 + 地面碰撞 + 跳跃
+      pwVy-=9.8*dt;cam.position.y+=pwVy*dt;
+      const pr=new THREE.Raycaster(cam.position,new THREE.Vector3(0,-1,0),0,20);if(paintingWorld){const ph=pr.intersectObjects(paintingWorld.children,true);if(ph.length>0&&cam.position.y-ph[0].point.y<1.65+0.15){cam.position.y=ph[0].point.y+1.65;pwVy=0;pwOnGround=true}else{pwOnGround=false}}
       // Boundary: 12m radius
       const hd=Math.sqrt(cam.position.x*cam.position.x+cam.position.z*cam.position.z);if(hd>12){cam.position.x*=12/hd;cam.position.z*=12/hd}
       cam.lookAt(cam.position.x+sy2*cp2,cam.position.y-Math.sin(st.pitch),cam.position.z-cy2*cp2);
@@ -363,7 +370,8 @@ document.getElementById('exitBtn').onclick=function(){
     renderer.render(scene,cam)}
   requestAnimationFrame(loop);
   let drag=0,lx=0,ly=0,pId=null;
-  renderer.domElement.addEventListener('pointerdown',function(e){if(e.target===jc||jc.contains(e.target))return;ia();drag=1;lx=e.clientX;ly=e.clientY;pId=e.pointerId});
+  let lastTap=0;
+  renderer.domElement.addEventListener('pointerdown',function(e){if(e.target===jc||jc.contains(e.target))return;ia();drag=1;lx=e.clientX;ly=e.clientY;pId=e.pointerId;const now2=performance.now();if(inPainting&&now2-lastTap<300)jump();lastTap=now2});
   window.addEventListener('pointerup',function(e){if(e.pointerId===pId){drag=0;pId=null}});
   window.addEventListener('pointermove',function(e){if(!drag||e.pointerId!==pId)return;st.yaw+=(e.clientX-lx)*0.005;st.pitch+=(e.clientY-ly)*0.005;st.pitch=Math.max(-1.4,Math.min(1.4,st.pitch));lx=e.clientX;ly=e.clientY});
   window.addEventListener('keydown',function(e){st.keys[e.key]=1;ia()});window.addEventListener('keyup',function(e){st.keys[e.key]=0});

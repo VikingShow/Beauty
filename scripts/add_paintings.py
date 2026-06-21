@@ -11,10 +11,12 @@ glTF 修改：追加 9 个 quad mesh（贴图）+ 9 个 box mesh（画框），
     python scripts/add_paintings.py
 """
 import base64
+import http.client
 import json
 import math
 import os
 import struct
+import time
 import urllib.parse
 import urllib.request
 from io import BytesIO
@@ -36,20 +38,7 @@ JPEG_QUALITY = 85
 # 15 幅**主流名作**文艺复兴画作。size 字段：landscape=宽度，portrait=高度。
 # 全部避开 David 展台（X=[7, 10] × Z=[-3.5, 3.5]），全挂在周边墙/中央隔断。
 PAINTINGS = [
-    # ========= Space A · 理性与秩序 · Leonardo 三杰 + 早期文艺复兴 =========
-    {
-        "id": "leonardo_last_supper",
-        "title_zh": "最后的晚餐",
-        "title_en": "The Last Supper",
-        "artist": "Leonardo da Vinci",
-        "year": "1495–1498",
-        "filename": "Última Cena - Da Vinci 5.jpg",
-        "orient": "landscape",
-        "aspect": 880 / 460,
-        "size": 2.5,
-        "pos": (-7.0, 1.7, -7.5),
-        "facing": "+Z",
-    },
+    # ========= Space A · 文艺复兴意大利 =========
     {
         "id": "mona_lisa",
         "title_zh": "蒙娜丽莎",
@@ -60,60 +49,7 @@ PAINTINGS = [
         "orient": "portrait",
         "aspect": 53 / 77,
         "size": 1.4,
-        "pos": (-4.3, 1.7, -7.5),
-        "facing": "+Z",
-    },
-    {
-        "id": "virgin_of_the_rocks",
-        "title_zh": "岩间圣母",
-        "title_en": "Virgin of the Rocks",
-        "artist": "Leonardo da Vinci",
-        "year": "1483–1486",
-        "filename": "Leonardo Da Vinci - Vergine delle Rocce (Louvre).jpg",
-        "orient": "portrait",
-        "aspect": 122 / 199,
-        "size": 1.6,
-        "pos": (-10.0, 1.7, -5.0),
-        "facing": "+X",
-    },
-    {
-        "id": "masaccio_trinity",
-        "title_zh": "圣三位一体",
-        "title_en": "Holy Trinity",
-        "artist": "Masaccio",
-        "year": "1425–1428",
-        "filename": "Masaccio, Holy Trinity, 1425-28, Santa Maria Novella, Florence.jpg",
-        "orient": "portrait",
-        "aspect": 317 / 667,
-        "size": 2.2,
-        "pos": (-10.0, 1.8, 2.0),
-        "facing": "+X",
-    },
-    {
-        "id": "fra_angelico_deposition",
-        "title_zh": "基督下十字架",
-        "title_en": "Deposition of Christ",
-        "artist": "Fra Angelico",
-        "year": "1432",
-        "filename": "Fra Angelico - Deposition of Christ (Santa Trinita Altarpiece) 1429-32.jpg",
-        "orient": "landscape",
-        "aspect": 185 / 176,
-        "size": 1.4,
-        "pos": (-10.0, 1.7, -2.0),
-        "facing": "+X",
-    },
-    # ========= Space B · 变化与冲突 · 波提切利 + 威尼斯 + 历史题材 =========
-    {
-        "id": "birth_of_venus",
-        "title_zh": "维纳斯的诞生",
-        "title_en": "The Birth of Venus",
-        "artist": "Sandro Botticelli",
-        "year": "1485",
-        "filename": "Sandro Botticelli - La nascita di Venere - Google Art Project - edited.jpg",
-        "orient": "landscape",
-        "aspect": 278.5 / 172.5,
-        "size": 2.0,
-        "pos": (5.0, 1.7, -7.5),
+        "pos": (-7.0, 1.7, -7.5),
         "facing": "+Z",
     },
     {
@@ -126,49 +62,9 @@ PAINTINGS = [
         "orient": "landscape",
         "aspect": 314 / 203,
         "size": 2.0,
-        "pos": (14.1, 1.7, -7.5),
+        "pos": (-4.3, 1.7, -7.5),
         "facing": "+Z",
     },
-    {
-        "id": "venus_of_urbino",
-        "title_zh": "乌尔比诺的维纳斯",
-        "title_en": "Venus of Urbino",
-        "artist": "Titian",
-        "year": "1538",
-        "filename": "Tiziano - Venere di Urbino - Google Art Project.jpg",
-        "orient": "landscape",
-        "aspect": 165 / 119,
-        "size": 1.6,
-        "pos": (11.8, 1.7, -7.5),
-        "facing": "+Z",
-    },
-    {
-        "id": "mantegna_triumphs",
-        "title_zh": "凯撒的凯旋",
-        "title_en": "Triumphs of Caesar",
-        "artist": "Andrea Mantegna",
-        "year": "1484–1492",
-        "filename": "Andrea Mantegna - The Triumphs of Caesar - Trumpeters and Standard-Bearer - WGA13990.jpg",
-        "orient": "landscape",
-        "aspect": 278 / 266,
-        "size": 1.4,
-        "pos": (-5.5, 1.7, 7.50),
-        "facing": "-Z",
-    },
-    {
-        "id": "uccello_san_romano",
-        "title_zh": "圣罗马诺之战",
-        "title_en": "The Battle of San Romano",
-        "artist": "Paolo Uccello",
-        "year": "c.1438–1440",
-        "filename": "Paolo uccello, la battaglia di san romano, 1438-40 ca. 03.jpg",
-        "orient": "landscape",
-        "aspect": 323 / 182,
-        "size": 1.8,
-        "pos": (-2.5, 1.7, 7.50),
-        "facing": "-Z",
-    },
-    # ========= Space C · 沉浸与观念 · Michelangelo + Raphael + 威尼斯宗教 =========
     {
         "id": "school_of_athens",
         "title_zh": "雅典学院",
@@ -183,73 +79,146 @@ PAINTINGS = [
         "facing": "+Z",
     },
     {
-        "id": "creation_of_adam",
-        "title_zh": "创造亚当",
-        "title_en": "The Creation of Adam",
-        "artist": "Michelangelo",
-        "year": "1508–1512",
-        "filename": "Michelangelo - Creation of Adam (cropped).jpg",
-        "orient": "landscape",
-        "aspect": 570 / 280,
-        "size": 2.4,
+        "id": "david_napoleon",
+        "title_zh": "拿破仑穿越阿尔卑斯山",
+        "title_en": "Napoleon Crossing the Alps",
+        "artist": "Jacques-Louis David",
+        "year": "1801",
+        "filename": "Jacques-Louis David 007.jpg",
+        "orient": "portrait",
+        "aspect": 221 / 261,
+        "size": 1.8,
         "pos": (1.8, 1.7, -7.5),
         "facing": "+Z",
     },
     {
-        "id": "raphael_sistine_madonna",
-        "title_zh": "西斯廷圣母",
-        "title_en": "Sistine Madonna",
-        "artist": "Raphael",
-        "year": "1513–1514",
-        "filename": "Raphael - The Sistine Madonna - Google Arts & Culture.jpg",
-        "orient": "portrait",
-        "aspect": 196 / 265,
+        "id": "mantegna_triumphs",
+        "title_zh": "凯撒的凯旋",
+        "title_en": "Triumphs of Caesar",
+        "artist": "Andrea Mantegna",
+        "year": "1484–1492",
+        "filename": "Andrea Mantegna - The Triumphs of Caesar - Trumpeters and Standard-Bearer - WGA13990.jpg",
+        "orient": "landscape",
+        "aspect": 278 / 266,
         "size": 1.4,
+        "pos": (5.0, 1.7, -7.5),
+        "facing": "+Z",
+    },
+    # ========= Space B · 北方文艺复兴与荷兰黄金时代 =========
+    {
+        "id": "van_eyck_arnolfini",
+        "title_zh": "阿诺芬尼夫妇像",
+        "title_en": "The Arnolfini Portrait",
+        "artist": "Jan van Eyck",
+        "year": "1434",
+        "filename": "Van Eyck - Arnolfini Portrait.jpg",
+        "orient": "portrait",
+        "aspect": 60 / 82.2,
+        "size": 1.5,
+        "pos": (14.1, 1.7, -7.5),
+        "facing": "+Z",
+    },
+    {
+        "id": "bruegel_hunters",
+        "title_zh": "雪中猎人",
+        "title_en": "Hunters in the Snow",
+        "artist": "Pieter Bruegel the Elder",
+        "year": "1565",
+        "filename": "Pieter Bruegel the Elder - Hunters in the Snow (Winter) - Google Art Project.jpg",
+        "orient": "landscape",
+        "aspect": 162 / 117,
+        "size": 1.8,
         "pos": (16.0, 1.7, -7.5),
         "facing": "+Z",
     },
-    # 展台东面 X=10.20 facing +X：米开朗琪罗《最后的审判》垂直大画，正对入口走廊
     {
-        "id": "michelangelo_last_judgment",
-        "title_zh": "最后的审判",
-        "title_en": "The Last Judgment",
-        "artist": "Michelangelo",
-        "year": "1536–1541",
-        "filename": "Last Judgement (Michelangelo).jpg",
+        "id": "vermeer_pearl_earring",
+        "title_zh": "戴珍珠耳环的少女",
+        "title_en": "Girl with a Pearl Earring",
+        "artist": "Johannes Vermeer",
+        "year": "c.1665",
+        "filename": "Girl with a Pearl Earring.jpg",
         "orient": "portrait",
-        "aspect": 1200 / 1370,
-        "size": 2.6,
+        "aspect": 39 / 44.5,
+        "size": 1.2,
         "pos": (10.20, 1.85, 0.0),
         "facing": "+X",
     },
-    # 中央隔断东面 facing +X：威尼斯宗教 + 早期透视
     {
-        "id": "bellini_resurrection",
-        "title_zh": "基督复活",
-        "title_en": "Resurrection of Christ",
-        "artist": "Giovanni Bellini",
-        "year": "1475–1479",
-        "filename": "Resurrection of Christ by Giovanni Bellini (Berlin).jpg",
+        "id": "vermeer_milkmaid",
+        "title_zh": "倒牛奶的女仆",
+        "title_en": "The Milkmaid",
+        "artist": "Johannes Vermeer",
+        "year": "c.1658",
+        "filename": "Johannes Vermeer - Het melkmeisje - Google Art Project.jpg",
         "orient": "portrait",
-        "aspect": 128 / 148,
-        "size": 1.3,
-        "pos": (-0.32, 1.7, -2.0),
+        "aspect": 41 / 45.5,
+        "size": 1.2,
+        "pos": (-5.5, 1.7, 7.50),
+        "facing": "-Z",
+    },
+    {
+        "id": "friedrich_wanderer",
+        "title_zh": "雾海上的旅人",
+        "title_en": "Wanderer above the Sea of Fog",
+        "artist": "Caspar David Friedrich",
+        "year": "1818",
+        "filename": "Caspar David Friedrich - Wanderer above the sea of fog.jpg",
+        "orient": "portrait",
+        "aspect": 74.8 / 94.8,
+        "size": 1.5,
+        "pos": (-2.5, 1.7, 7.50),
+        "facing": "-Z",
+    },
+    # ========= Space C · 肖像与日常生活 =========
+    {
+        "id": "antonello_portrait",
+        "title_zh": "男子肖像",
+        "title_en": "Portrait of a Man",
+        "artist": "Antonello da Messina",
+        "year": "c.1475",
+        "filename": "Antonello da Messina - Portrait of a Man - National Gallery London.jpg",
+        "orient": "portrait",
+        "aspect": 25 / 35,
+        "size": 1.0,
+        "pos": (-0.69, 1.7, 2.0),
+        "facing": "-X",
+    },
+    {
+        "id": "renoir_luncheon",
+        "title_zh": "船上的午宴",
+        "title_en": "Luncheon of the Boating Party",
+        "artist": "Pierre-Auguste Renoir",
+        "year": "1881",
+        "filename": "Pierre-Auguste Renoir - Luncheon of the Boating Party - Google Art Project.jpg",
+        "alt_filenames": [
+            "Renoir - Luncheon of the Boating Party.jpg",
+            "Auguste Renoir - Luncheon of the Boating Party - WGA.jpg",
+        ],
+        "orient": "landscape",
+        "aspect": 120 / 92,
+        "size": 1.6,
+        "pos": (-10.0, 1.7, -5.0),
         "facing": "+X",
     },
     {
-        "id": "piero_baptism",
-        "title_zh": "基督受洗",
-        "title_en": "The Baptism of Christ",
-        "artist": "Piero della Francesca",
-        "year": "c.1450",
-        "filename": "Piero della Francesca - Battesimo di Cristo (National Gallery, London).jpg",
-        "orient": "portrait",
-        "aspect": 116 / 167,
-        "size": 1.4,
-        "pos": (-0.32, 1.7, 2.0),
+        "id": "hopper_nighthawks",
+        "title_zh": "夜鹰",
+        "title_en": "Nighthawks",
+        "artist": "Edward Hopper",
+        "year": "1942",
+        "filename": "Nighthawks by Edward Hopper 1942.jpg",
+        "alt_filenames": [
+            "Edward Hopper - Nighthawks - Google Art Project.jpg",
+            "Nighthawks by Edward Hopper.jpg",
+            "Edward Hopper Nighthawks.jpg",
+        ],
+        "orient": "landscape",
+        "aspect": 152.4 / 84.1,
+        "size": 2.0,
+        "pos": (-10.0, 1.8, 2.0),
         "facing": "+X",
     },
-    # 中央隔断西面 facing -X：乔尔乔内 + 安东内罗肖像
     {
         "id": "giorgione_tempest",
         "title_zh": "暴风雨",
@@ -264,17 +233,67 @@ PAINTINGS = [
         "facing": "-X",
     },
     {
-        "id": "antonello_portrait",
-        "title_zh": "男子肖像",
-        "title_en": "Portrait of a Man",
-        "artist": "Antonello da Messina",
-        "year": "c.1475",
-        "filename": "Antonello da Messina - Portrait of a Man - National Gallery London.jpg",
-        "orient": "portrait",
-        "aspect": 25 / 35,
-        "size": 1.0,
-        "pos": (-0.69, 1.7, 2.0),
-        "facing": "-X",
+        "id": "uccello_san_romano",
+        "title_zh": "圣罗马诺之战",
+        "title_en": "The Battle of San Romano",
+        "artist": "Paolo Uccello",
+        "year": "c.1438–1440",
+        "filename": "Paolo uccello, la battaglia di san romano, 1438-40 ca. 03.jpg",
+        "orient": "landscape",
+        "aspect": 323 / 182,
+        "size": 1.8,
+        "pos": (-10.0, 1.7, -2.0),
+        "facing": "+X",
+    },
+    {
+        "id": "monet_sunrise",
+        "title_zh": "日出·印象",
+        "title_en": "Impression, Sunrise",
+        "artist": "Claude Monet",
+        "year": "1872",
+        "filename": "Claude Monet, Impression, soleil levant, 1872.jpg",
+        "orient": "landscape",
+        "aspect": 63 / 48,
+        "size": 1.4,
+        "pos": (11.8, 1.7, -7.5),
+        "facing": "+Z",
+    },
+    {
+        "id": "klimt_kiss",
+        "title_zh": "吻",
+        "title_en": "The Kiss",
+        "artist": "Gustav Klimt",
+        "year": "1908",
+        "filename": "Gustav Klimt - The Kiss - Google Art Project.jpg",
+        "alt_filenames": [
+            "Gustav Klimt 017.jpg",
+            "Klimt - The Kiss.jpg",
+            "The Kiss - Gustav Klimt - Google Cultural Institute.jpg",
+        ],
+        "orient": "landscape",
+        "aspect": 180 / 180,
+        "size": 1.8,
+        "pos": (-0.32, 1.7, -2.0),
+        "facing": "+X",
+    },
+    {
+        "id": "degas_dance",
+        "title_zh": "舞蹈课",
+        "title_en": "The Dance Class",
+        "artist": "Edgar Degas",
+        "year": "c.1874",
+        "filename": "Edgar Degas - The Dance Class - WGA06073.jpg",
+        "alt_filenames": [
+            "Edgar Degas - The Ballet Class - Google Art Project.jpg",
+            "Edgar Degas - La clase de danza.jpg",
+            "Edgar Degas - The Dance Class - WGA.jpg",
+            "Edgar Germain Hilaire Degas 011.jpg",
+        ],
+        "orient": "landscape",
+        "aspect": 85 / 75,
+        "size": 1.3,
+        "pos": (-0.32, 1.7, 2.0),
+        "facing": "+X",
     },
 ]
 
@@ -297,7 +316,7 @@ HTTP_HEADERS = {"User-Agent": "BeautyGalleryDemo/1.0 (HarmonyOS student project)
 
 import time
 
-def _fetch_with_retry(url, timeout=120, max_retries=4):
+def _fetch_with_retry(url, timeout=120, max_retries=6):
     """带指数退避的 GET。返回 bytes。"""
     delay = 3
     for attempt in range(max_retries):
@@ -308,6 +327,14 @@ def _fetch_with_retry(url, timeout=120, max_retries=4):
         except urllib.error.HTTPError as e:
             if e.code == 429 and attempt < max_retries - 1:
                 print(f"    429, retry in {delay}s...")
+                time.sleep(delay)
+                delay *= 2
+                continue
+            raise
+        except (http.client.IncompleteRead, ConnectionResetError, TimeoutError,
+                urllib.error.URLError, OSError) as e:
+            if attempt < max_retries - 1:
+                print(f"    network error ({type(e).__name__}), retry in {delay}s...")
                 time.sleep(delay)
                 delay *= 2
                 continue
@@ -340,21 +367,46 @@ def download_and_compress(p):
         print(f"  [skip] {p['id']}.jpg already exists")
         return out_path
     print(f"  resolving {p['id']}...")
-    url = resolve_wikimedia_url(p["filename"])
-    if not url:
-        raise RuntimeError(f"cannot resolve Wikimedia URL for: {p['filename']}")
-    print(f"    url: {url}")
-    data = _fetch_with_retry(url)
-    time.sleep(1.5)  # 下载间隔，规避 Wikimedia 速率限制
-    img = Image.open(BytesIO(data))
-    if img.mode != "RGB":
-        img = img.convert("RGB")
-    w, h = img.size
-    if max(w, h) > MAX_TEXTURE_SIDE:
-        s = MAX_TEXTURE_SIDE / max(w, h)
-        img = img.resize((int(w * s), int(h * s)), Image.LANCZOS)
-    img.save(out_path, "JPEG", quality=JPEG_QUALITY, optimize=True)
-    print(f"    saved → {out_path}  ({os.path.getsize(out_path)//1024} KB, {img.size})")
+    # 尝试主文件名 + 备选文件名列表
+    filenames = [p["filename"]]
+    if p.get("alt_filenames"):
+        filenames.extend(p["alt_filenames"])
+    url = None
+    for fn in filenames:
+        try:
+            url = resolve_wikimedia_url(fn)
+            if url:
+                print(f"    matched: {fn}")
+                break
+        except Exception:
+            continue
+    try:
+        if url:
+            print(f"    url: {url}")
+            data = _fetch_with_retry(url)
+            time.sleep(1.5)
+            img = Image.open(BytesIO(data))
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            w, h = img.size
+            if max(w, h) > MAX_TEXTURE_SIDE:
+                s = MAX_TEXTURE_SIDE / max(w, h)
+                img = img.resize((int(w * s), int(h * s)), Image.LANCZOS)
+            img.save(out_path, "JPEG", quality=JPEG_QUALITY, optimize=True)
+            print(f"    saved -> {out_path}  ({os.path.getsize(out_path)//1024} KB, {img.size})")
+            return out_path
+        else:
+            print(f"    Wikimedia resolve failed, using placeholder")
+    except Exception as e:
+        print(f"    download error ({e}), using placeholder")
+    # 生成纯色占位图
+    placeholder = Image.new("RGB", (512, 384), (
+        hash(p["id"]) % 80 + 60,
+        hash(p["id"] + "g") % 80 + 40,
+        hash(p["id"] + "b") % 80 + 60
+    ))
+    placeholder.save(out_path, "JPEG", quality=85)
+    print(f"    placeholder -> {out_path}  ({os.path.getsize(out_path)//1024} KB)")
     return out_path
 
 # === 几何生成器 ===
