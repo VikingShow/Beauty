@@ -1,4 +1,5 @@
 import { preferences } from '@kit.ArkData';
+import { fileIo as fs } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ExhibitionLayout, PlacedArtwork, Position3, Scale3, Quaternion, generateId } from './GalleryTypes';
 
@@ -26,9 +27,9 @@ export class LayoutSerializer {
   async loadAll(context: Context): Promise<ExhibitionLayout[]> {
     try {
       const prefs = await preferences.getPreferences(context, PREFS_NAME);
-      const raw = await prefs.get(KEY_LAYOUTS, '[]') as string;
-      const parsed: object[] = JSON.parse(raw) as object[];
-      return parsed.map((o: object) => this.deserializeLayout(o));
+      const raw = await prefs.get(KEY_LAYOUTS, '[]');
+      const parsed: ExhibitionLayout[] = JSON.parse(raw.toString());
+      return parsed;
     } catch (e) {
       hilog.warn(DOMAIN, TAG, 'loadAll failed: %{public}s', JSON.stringify(e));
       return [];
@@ -52,17 +53,16 @@ export class LayoutSerializer {
 
   async exportToFile(context: Context, layout: ExhibitionLayout): Promise<string> {
     const json = JSON.stringify(layout, null, 2);
-    const fileName = `exhibition_${layout.id}.json`;
-    const dir = `${context.filesDir}/exports`;
+    const fileName = 'exhibition_' + layout.id + '.json';
+    const dir = context.filesDir + '/exports';
     if (!context) return '';
-    const fs = await import('@kit.CoreFileKit');
-    if (!fs.fileIo.accessSync(dir)) {
-      fs.fileIo.mkdirSync(dir);
+    if (!fs.accessSync(dir)) {
+      fs.mkdirSync(dir);
     }
-    const filePath = `${dir}/${fileName}`;
-    const fd = fs.fileIo.openSync(filePath, 0o102 | 0o2);
-    fs.fileIo.writeSync(fd.fd, json);
-    fs.fileIo.closeSync(fd);
+    const filePath = dir + '/' + fileName;
+    const fd = fs.openSync(filePath, 0o102 | 0o2);
+    fs.writeSync(fd.fd, json);
+    fs.closeSync(fd);
     hilog.info(DOMAIN, TAG, 'exported to: %{public}s', filePath);
     return filePath;
   }
@@ -79,56 +79,5 @@ export class LayoutSerializer {
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
-  }
-
-  private deserializeLayout(o: object): ExhibitionLayout {
-    const src = o as Record<string, Object>;
-    return {
-      id: (src['id'] ?? '') as string,
-      name: (src['name'] ?? '') as string,
-      sceneUri: (src['sceneUri'] ?? '') as string,
-      sceneType: (src['sceneType'] ?? 'gltf') as 'gltf' | '3dgs',
-      placedArtworks: this.deserializeArtworks(src['placedArtworks']),
-      cameraPosition: this.deserializePos(src['cameraPosition']),
-      cameraRotation: this.deserializeQuat(src['cameraRotation']),
-      createdAt: (src['createdAt'] ?? 0) as number,
-      updatedAt: (src['updatedAt'] ?? 0) as number
-    };
-  }
-
-  private deserializeArtworks(raw: Object | undefined): PlacedArtwork[] {
-    if (raw === undefined || raw === null) return [];
-    const arr = raw as Object[];
-    return arr.map((o: Object) => {
-      const src = o as Record<string, Object>;
-      return {
-        id: (src['id'] ?? '') as string,
-        modelUri: (src['modelUri'] ?? '') as string,
-        modelName: (src['modelName'] ?? '') as string,
-        position: this.deserializePos(src['position']),
-        rotation: this.deserializeQuat(src['rotation']),
-        scale: this.deserializeScale(src['scale']),
-        nodePath: (src['nodePath'] ?? '') as string,
-        slotId: (src['slotId'] ?? '') as string
-      };
-    });
-  }
-
-  private deserializePos(raw: Object | undefined): Position3 {
-    if (raw === undefined || raw === null) return { x: 0, y: 0, z: 0 };
-    const src = raw as Record<string, number>;
-    return { x: src['x'] ?? 0, y: src['y'] ?? 0, z: src['z'] ?? 0 };
-  }
-
-  private deserializeQuat(raw: Object | undefined): Quaternion {
-    if (raw === undefined || raw === null) return { x: 0, y: 0, z: 0, w: 1 };
-    const src = raw as Record<string, number>;
-    return { x: src['x'] ?? 0, y: src['y'] ?? 0, z: src['z'] ?? 0, w: src['w'] ?? 1 };
-  }
-
-  private deserializeScale(raw: Object | undefined): Scale3 {
-    if (raw === undefined || raw === null) return { x: 1, y: 1, z: 1 };
-    const src = raw as Record<string, number>;
-    return { x: src['x'] ?? 1, y: src['y'] ?? 1, z: src['z'] ?? 1 };
   }
 }

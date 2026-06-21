@@ -1,7 +1,6 @@
 import { picker } from '@kit.CoreFileKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { BusinessError } from '@kit.BasicServicesKit';
 import { RenderContext } from '@kit.ArkGraphics3D';
 
 const DOMAIN = 0x0105;
@@ -24,7 +23,7 @@ export class ModelManager {
 
   private ensureDir(subDir: string): void {
     if (this.context === undefined) return;
-    const dir: string = `${this.context.filesDir}/${subDir}`;
+    const dir: string = this.context.filesDir + '/' + subDir;
     if (!fs.accessSync(dir)) {
       fs.mkdirSync(dir);
       hilog.info(DOMAIN, TAG, 'created dir: %{public}s', dir);
@@ -62,10 +61,10 @@ export class ModelManager {
     const rawName: string = decodeURIComponent(srcUri.split('/').pop() ?? 'unknown');
     const ext: string = rawName.substring(rawName.lastIndexOf('.')).toLowerCase();
     if (!validExts.includes(ext)) {
-      throw new Error(`Invalid file type: ${ext}. Expected: ${validExts.join(', ')}`);
+      throw new Error('Invalid file type: ' + ext + '. Expected: ' + validExts.join(', '));
     }
-    const destDir: string = `${this.context.filesDir}/${subDir}`;
-    const destPath: string = `${destDir}/${rawName}`;
+    const destDir: string = this.context.filesDir + '/' + subDir;
+    const destPath: string = destDir + '/' + rawName;
     if (fs.accessSync(destPath)) {
       hilog.info(DOMAIN, TAG, 'file exists, overwriting: %{public}s', rawName);
       fs.unlinkSync(destPath);
@@ -83,22 +82,22 @@ export class ModelManager {
   }
 
   getSandboxUri(relativePath: string): string {
-    return `${this.sandboxProtocol}:///${relativePath}`;
+    return this.sandboxProtocol + ':///' + relativePath;
   }
 
   getAbsolutePath(subDir: string, fileName: string): string {
     if (this.context === undefined) return '';
-    return `${this.context.filesDir}/${subDir}/${fileName}`;
+    return this.context.filesDir + '/' + subDir + '/' + fileName;
   }
 
   listFiles(subDir: string): string[] {
     if (this.context === undefined) return [];
-    const dir: string = `${this.context.filesDir}/${subDir}`;
+    const dir: string = this.context.filesDir + '/' + subDir;
     if (!fs.accessSync(dir)) return [];
     const entries: string[] = [];
     const list = fs.listFileSync(dir);
     for (const name of list) {
-      entries.push(`${dir}/${name}`);
+      entries.push(dir + '/' + name);
     }
     return entries;
   }

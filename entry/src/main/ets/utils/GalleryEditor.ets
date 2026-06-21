@@ -9,6 +9,7 @@ import {
   RenderContext,
   RaycastParameters
 } from '@kit.ArkGraphics3D';
+import { spatialRender } from '@kit.SpatialReconKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ModelManager } from './ModelManager';
 import { PlacedArtwork, Position3, Scale3, Quaternion, generateId } from './GalleryTypes';
@@ -195,7 +196,8 @@ export class GalleryEditor {
       this.selectedNode.parent.children.remove(this.selectedNode);
     }
     if (this.selectedArtwork !== null) {
-      this.placedArtworks = this.placedArtworks.filter((a: PlacedArtwork) => a.id !== this.selectedArtwork!.id);
+      const selId: string = this.selectedArtwork.id;
+      this.placedArtworks = this.placedArtworks.filter((a: PlacedArtwork) => a.id !== selId);
     }
     this.selectedArtwork = null;
     this.selectedNode = null;
@@ -291,6 +293,30 @@ export class GalleryEditor {
     } catch (e) {
       hilog.warn(DOMAIN, TAG, 'raycast failed: %{public}s', JSON.stringify(e));
       return null;
+    }
+  }
+
+  async load3DGSScene(gsUri: string): Promise<void> {
+    if (this.scene === undefined || this.factory === undefined) {
+      throw new Error('Scene not loaded');
+    }
+    try {
+      if (this.renderContext !== undefined) {
+        this.renderContext.loadPlugin(spatialRender.GSPlugin.PLUGIN_ID);
+      }
+      hilog.info(DOMAIN, TAG, '3DGS plugin loaded, creating GSNode');
+      const gsNode: spatialRender.GSNode = await this.factory.createNode({ name: 'gs_scene', path: '//gs_scene' });
+      if (this.artworksRoot !== undefined) {
+        this.artworksRoot.children.append(gsNode);
+      }
+      const importSettings: spatialRender.GSImportSettings = { uri: gsUri };
+      await spatialRender.GSPlugin.loadGSNode(this.scene, importSettings, gsNode);
+      gsNode.position = { x: 0, y: 0, z: 0 };
+      hilog.info(DOMAIN, TAG, '3DGS node loaded OK');
+      this.notifyUpdate();
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'load3DGSScene failed: %{public}s', JSON.stringify(e));
+      throw new Error('3DGS load failed');
     }
   }
 

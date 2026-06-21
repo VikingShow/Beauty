@@ -1,6 +1,5 @@
 import { PresetScene, PRESET_SCENES, SceneType } from '../utils/GalleryTypes';
 import { ModelManager } from '../utils/ModelManager';
-import { BusinessError } from '@kit.BasicServicesKit';
 
 @Component
 export struct SceneSelector {
@@ -27,8 +26,8 @@ export struct SceneSelector {
       const name: string = path.split('/').pop() ?? 'custom_scene';
       this.onSceneSelected(path, 'gltf', 'custom_' + Date.now().toString(36));
     } catch (e) {
-      const err = e as BusinessError;
-      this.importError = err.message ?? JSON.stringify(e);
+      const msg: string = e instanceof Error ? e.message : JSON.stringify(e);
+      this.importError = msg;
     } finally {
       this.importing = false;
     }

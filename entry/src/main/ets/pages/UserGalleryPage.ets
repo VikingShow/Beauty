@@ -7,6 +7,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { GalleryEditor, EditorMode } from '../utils/GalleryEditor';
 import { ModelManager } from '../utils/ModelManager';
 import { SceneSelector } from '../components/SceneSelector';
+import { ArtworkToolbar } from '../components/ArtworkToolbar';
 import { Joystick } from '../components/Joystick';
 import { FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
 import { PlacedArtwork, SceneType } from '../utils/GalleryTypes';
@@ -51,6 +52,11 @@ struct UserGalleryPage {
     this.editor.destroy();
   }
 
+  private getSelectedArtworkId(): string {
+    const sel: PlacedArtwork | null = this.editor.getSelectedArtwork();
+    return sel !== null ? sel.id : '';
+  }
+
   private syncEditorState(): void {
     this.editorMode = this.editor.getMode();
     this.placedCount = this.editor.getPlacedArtworks().length;
@@ -93,8 +99,8 @@ struct UserGalleryPage {
       }, 100);
       hilog.info(DOMAIN, 'UserGalleryPage', 'scene loaded OK');
     } catch (e) {
-      const err = e as BusinessError;
-      this.errorMsg = err.message ?? JSON.stringify(e);
+      const msg: string = e instanceof Error ? e.message : JSON.stringify(e);
+      this.errorMsg = msg;
       hilog.error(DOMAIN, 'UserGalleryPage', 'load failed: %{public}s', this.errorMsg);
     }
   }
@@ -106,8 +112,22 @@ struct UserGalleryPage {
       const path: string = await this.modelManager.pickArtworkFile();
       await this.editor.importArtwork(path);
     } catch (e) {
-      const err = e as BusinessError;
-      this.importError = err.message ?? JSON.stringify(e);
+      const msg: string = e instanceof Error ? e.message : JSON.stringify(e);
+      this.importError = msg;
+    } finally {
+      this.importing = false;
+    }
+  }
+
+  private async import3DGS(): Promise<void> {
+    this.importing = true;
+    this.importError = '';
+    try {
+      const path: string = await this.modelManager.pickGSFile();
+      await this.editor.load3DGSScene(path);
+    } catch (e) {
+      const msg: string = e instanceof Error ? e.message : JSON.stringify(e);
+      this.importError = msg;
     } finally {
       this.importing = false;
     }
@@ -147,7 +167,7 @@ struct UserGalleryPage {
         .backgroundColor('#0a0a1a')
 
       if (this.sceneReady) {
-        Component3D({ scene: this.editor.getScene()! })
+        Component3D({ scene: this.editor.getScene() })
           .width('100%')
           .height('100%')
           .backgroundColor('#0a0a1a')
@@ -216,33 +236,34 @@ struct UserGalleryPage {
           .markAnchor({ x: 0, y: 192 })
 
         Column({ space: 8 }) {
-          Button('添加作品')
-            .fontSize(14)
-            .height(40)
-            .width(140)
-            .backgroundColor('#d4b678')
-            .fontColor('#0a0a1a')
-            .enabled(!this.importing)
-            .onClick(() => {
-              this.importArtwork();
-            })
+          ArtworkToolbar({
+            artworks: this.editor.getPlacedArtworks(),
+            importing: this.importing,
+            importError: this.importError,
+            selectedId: this.getSelectedArtworkId(),
+            onAdd: () => { this.importArtwork(); },
+            onSelect: (id: string) => { this.editor.selectArtworkById(id); },
+            onDelete: (id: string) => {
+              this.editor.selectArtworkById(id);
+              this.editor.removeSelectedArtwork();
+            }
+          })
 
-          if (this.importing) {
-            LoadingProgress().width(20).height(20).color('#d4b678')
-          }
-
-          if (this.importError !== '') {
-            Text(this.importError)
-              .fontSize(10)
-              .fontColor('#ff6b6b')
-              .maxLines(2)
-              .width(140)
-          }
+          Button('导入3DGS场景')
+            .fontSize(13)
+            .height(36)
+            .width(160)
+            .backgroundColor('#2a1a3e')
+            .fontColor('#c4a6e8')
+            .borderColor('#6a4a8a')
+            .borderWidth(1)
+            .enabled(this.sceneReady && !this.importing)
+            .onClick(() => { this.import3DGS(); })
 
           Button('切换展厅')
             .fontSize(14)
             .height(36)
-            .width(140)
+            .width(160)
             .backgroundColor('#1a1a2e')
             .fontColor('#8a8a9a')
             .borderColor('#4a4a5a')
@@ -252,7 +273,7 @@ struct UserGalleryPage {
             })
         }
         .position({ x: '100%', y: '50%' })
-        .markAnchor({ x: 160, y: 80 })
+        .markAnchor({ x: 180, y: 120 })
 
         if (this.propertyVisible && this.selectedName !== '') {
           Column({ space: 8 }) {
