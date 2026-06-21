@@ -6,6 +6,7 @@
     "pages/DavidScene",
     "pages/ChineseGalleryScene",
     "pages/SpatialReconPilot",
-    "pages/ThreeJsHost"
+    "pages/ThreeJsHost",
+    "pages/UserGalleryPage"
   ]
 }
