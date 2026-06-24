@@ -12,7 +12,7 @@ import { ArtworkToolbar } from '../components/ArtworkToolbar';
 import { PropertyPanel } from '../components/PropertyPanel';
 import { Joystick } from '../components/Joystick';
 import { FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
-import { PlacedArtwork, SceneType, Position3 } from '../utils/GalleryTypes';
+import { PlacedArtwork, SceneType, Position3, PRESET_SCENES } from '../utils/GalleryTypes';
 
 const DOMAIN = 0x0105;
 
@@ -91,7 +91,17 @@ struct UserGalleryPage {
       if (cam !== undefined) {
         cam.position = { x: 0, y: 1.65, z: 5 };
         this.controller.attach(cam);
-        this.controller.setBounds({ x: -50, z: -50 }, { x: 50, z: 50 });
+        const sceneConfig = PRESET_SCENES.find((s) => s.id === id);
+        if (sceneConfig !== undefined &&
+            sceneConfig.boundsMin !== undefined &&
+            sceneConfig.boundsMax !== undefined) {
+          this.controller.setBounds(
+            { x: sceneConfig.boundsMin.x, z: sceneConfig.boundsMin.z },
+            { x: sceneConfig.boundsMax.x, z: sceneConfig.boundsMax.z }
+          );
+        } else {
+          this.controller.setBounds({ x: -20, z: -20 }, { x: 20, z: 20 });
+        }
       }
       this.sceneReady = true;
       this.sceneSelectorVisible = false;

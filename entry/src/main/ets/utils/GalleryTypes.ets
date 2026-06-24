@@ -49,6 +49,8 @@ export interface PresetScene {
   uri: Resource;
   type: SceneType;
   description: string;
+  boundsMin?: Position3;
+  boundsMax?: Position3;
 }
 
 export const PRESET_SCENES: PresetScene[] = [
@@ -58,7 +60,9 @@ export const PRESET_SCENES: PresetScene[] = [
     nameZh: '白立方展厅',
     uri: $rawfile('gltf/white_cube/scene.gltf'),
     type: 'gltf',
-    description: '简洁白色展厅，9个画位 + 1个雕塑位'
+    description: '简洁白色展厅，9个画位 + 1个雕塑位',
+    boundsMin: { x: -4, y: 0, z: -4 },
+    boundsMax: { x: 4, y: 0, z: 4 }
   },
   {
     id: 'salon_carre',
@@ -66,7 +70,9 @@ export const PRESET_SCENES: PresetScene[] = [
     nameZh: '沙龙展厅',
     uri: $rawfile('gltf/salon_carre/scene.gltf'),
     type: 'gltf',
-    description: '法式沙龙展厅，22个画位 + 1个雕塑位'
+    description: '法式沙龙展厅，22个画位 + 1个雕塑位',
+    boundsMin: { x: -9, y: 0, z: -7 },
+    boundsMax: { x: 9, y: 0, z: 7 }
   },
   {
     id: 'chinese_gallery',
@@ -74,7 +80,9 @@ export const PRESET_SCENES: PresetScene[] = [
     nameZh: '中国馆',
     uri: $rawfile('gltf/chinese_gallery/scene.gltf'),
     type: 'gltf',
-    description: '中式三厅，12幅传世名画'
+    description: '中式三厅，12幅传世名画',
+    boundsMin: { x: -15, y: 0, z: -10 },
+    boundsMax: { x: 15, y: 0, z: 10 }
   },
   {
     id: 'david',
@@ -82,7 +90,9 @@ export const PRESET_SCENES: PresetScene[] = [
     nameZh: '大卫馆',
     uri: $rawfile('gltf/David/scene.gltf'),
     type: 'gltf',
-    description: '文艺复兴艺术馆，18幅名画'
+    description: '文艺复兴艺术馆，18幅名画',
+    boundsMin: { x: -20, y: 0, z: -15 },
+    boundsMax: { x: 20, y: 0, z: 15 }
   }
 ];
 
