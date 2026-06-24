@@ -6,16 +6,8 @@ export struct SceneSelector {
   @Prop selectedSceneId: string = '';
   @State importing: boolean = false;
   @State importError: string = '';
-  private modelManager: ModelManager | undefined = undefined;
-  private onSceneSelected: (uri: Resource | string, type: SceneType, id: string) => void = () => {};
-
-  setModelManager(mgr: ModelManager): void {
-    this.modelManager = mgr;
-  }
-
-  setOnSceneSelected(cb: (uri: Resource | string, type: SceneType, id: string) => void): void {
-    this.onSceneSelected = cb;
-  }
+  modelManager: ModelManager | undefined = undefined;
+  onSceneSelected: (uri: Resource | string, type: SceneType, id: string) => void = () => {};
 
   async importCustomScene(): Promise<void> {
     if (this.modelManager === undefined) return;

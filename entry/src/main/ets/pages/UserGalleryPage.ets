@@ -37,6 +37,8 @@ struct UserGalleryPage {
   @State private scaleVal: number = 1.0;
   @State private propertyVisible: boolean = false;
   @State private dragging: boolean = false;
+  @State private toastMessage: string = '';
+  @State private toastOpacity: number = 0;
 
   private editor: GalleryEditor = new GalleryEditor();
   private controller: FirstPersonCameraController = new FirstPersonCameraController(undefined);
@@ -114,7 +116,8 @@ struct UserGalleryPage {
     this.importError = '';
     try {
       const path: string = await this.modelManager.pickArtworkFile();
-      await this.editor.importArtwork(path);
+      const artwork = await this.editor.importArtwork(path);
+      this.showToast('已导入: ' + artwork.modelName);
     } catch (e) {
       const msg: string = e instanceof Error ? e.message : JSON.stringify(e);
       this.importError = msg;
@@ -129,12 +132,23 @@ struct UserGalleryPage {
     try {
       const path: string = await this.modelManager.pickGSFile();
       await this.editor.load3DGSScene(path);
+      this.showToast('已导入 3DGS 场景');
     } catch (e) {
       const msg: string = e instanceof Error ? e.message : JSON.stringify(e);
       this.importError = msg;
     } finally {
       this.importing = false;
     }
+  }
+
+  private showToast(msg: string): void {
+    this.toastMessage = msg;
+    this.toastOpacity = 1;
+    setTimeout(() => {
+      animateTo({ duration: 300, curve: Curve.EaseOut }, () => {
+        this.toastOpacity = 0;
+      });
+    }, 2000);
   }
 
   private tapX: number = 0;
@@ -165,13 +179,23 @@ struct UserGalleryPage {
       100, 100
     );
     if (hitPos !== null) {
-      this.editor.moveSelectedToPosition(hitPos);
+      this.editor.moveSelectedOnGround(hitPos.x, hitPos.z);
     }
   }
 
   private confirmPlace(): void {
     this.editor.setMode('navigate');
     this.editor.deselectArtwork();
+  }
+
+  private resetCamera(): void {
+    const cam = this.editor.getCamera();
+    if (cam !== undefined) {
+      cam.position = { x: 0, y: 1.65, z: 5 };
+      cam.rotation = { x: 0, y: 0, z: 0, w: 1 };
+      cam.fov = 70 * Math.PI / 180;
+      this.showToast('视角已重置');
+    }
   }
 
   private async saveLayout(): Promise<void> {
@@ -210,7 +234,7 @@ struct UserGalleryPage {
             GestureGroup(GestureMode.Parallel,
               PanGesture({ fingers: 1 })
                 .onActionStart(() => {
-                  if (this.editorMode === 'select' || this.editorMode === 'place') {
+                  if (this.editorMode === 'edit') {
                     this.dragging = true;
                   } else {
                     this.controller.onPanStart();
@@ -228,6 +252,15 @@ struct UserGalleryPage {
                     this.dragging = false;
                   } else {
                     this.controller.onPanEnd();
+                  }
+                }),
+              PinchGesture()
+                .onActionUpdate((e: PinchGestureEvent) => {
+                  const cam = this.editor.getCamera();
+                  if (cam !== undefined) {
+                    const fovDelta = (e.scale - 1) * 20;
+                    const newFov = Math.max(30, Math.min(90, cam.fov * 180 / Math.PI - fovDelta));
+                    cam.fov = newFov * Math.PI / 180;
                   }
                 })
             )
@@ -264,11 +297,15 @@ struct UserGalleryPage {
             .fontColor('#d4b678')
             .margin({ left: 12 })
 
-          if (this.editorMode === 'place') {
-            Text('[ 放置模式 ]')
-              .fontSize(14)
+          if (this.editorMode === 'edit') {
+            Text('[ 编辑模式 - 拖拽移动 ]')
+              .fontSize(12)
               .fontColor('#8aaa6a')
               .fontWeight(FontWeight.Bold)
+          } else {
+            Text('[ 浏览模式 - 点击选择 ]')
+              .fontSize(12)
+              .fontColor('#8a8a9a')
           }
         }
         .position({ x: 20, y: 20 })
@@ -328,6 +365,17 @@ struct UserGalleryPage {
             .borderWidth(1)
             .enabled(this.sceneReady && this.placedCount > 0)
             .onClick(() => { this.saveLayout(); })
+
+          Button('重置视角')
+            .fontSize(13)
+            .height(36)
+            .width(160)
+            .backgroundColor('#1a1a2e')
+            .fontColor('#8a8a9a')
+            .borderColor('#4a4a5a')
+            .borderWidth(1)
+            .enabled(this.sceneReady)
+            .onClick(() => { this.resetCamera(); })
         }
         .position({ x: '100%', y: '50%' })
         .markAnchor({ x: 180, y: 120 })
@@ -340,7 +388,6 @@ struct UserGalleryPage {
             posZ: this.posZ,
             rotY: this.rotY,
             scaleVal: this.scaleVal,
-            editorMode: this.editorMode,
             onNudge: (dx: number, dy: number, dz: number) => { this.editor.nudgeSelected(dx, dy, dz); },
             onRotate: (deg: number) => { this.editor.rotateSelectedY(deg); },
             onScale: (factor: number) => { this.editor.scaleSelected(factor); },
@@ -348,15 +395,19 @@ struct UserGalleryPage {
             onDelete: () => { this.editor.removeSelectedArtwork(); },
             onCancel: () => { this.editor.deselectArtwork(); }
           })
-            .position({ x: '50%', y: '100%' })
-            .markAnchor({ x: 120, y: 320 })
+            .position({ x: '100%', y: '50%' })
+            .markAnchor({ x: 180, y: 100 })
         }
       }
 
       if (this.sceneSelectorVisible) {
         Column() {
           SceneSelector({
-            selectedSceneId: this.selectedSceneId
+            selectedSceneId: this.selectedSceneId,
+            modelManager: this.modelManager,
+            onSceneSelected: (uri: Resource | string, type: SceneType, id: string) => {
+              this.onSceneSelected(uri, type, id);
+            }
           })
         }
         .width('100%')
@@ -381,6 +432,18 @@ struct UserGalleryPage {
         .justifyContent(FlexAlign.Center)
         .backgroundColor('#0a0a1a')
         .opacity(this.loadingOpacity)
+      }
+
+      if (this.toastOpacity > 0) {
+        Text(this.toastMessage)
+          .fontSize(14)
+          .fontColor('#ffffff')
+          .padding({ left: 16, right: 16, top: 10, bottom: 10 })
+          .backgroundColor('#d4b678')
+          .borderRadius(8)
+          .position({ x: '50%', y: 80 })
+          .markAnchor({ x: 80, y: 0 })
+          .opacity(this.toastOpacity)
       }
     }
     .width('100%')

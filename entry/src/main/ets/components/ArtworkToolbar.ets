@@ -6,7 +6,7 @@ export struct ArtworkToolbar {
   @Prop importing: boolean = false;
   @Prop importError: string = '';
   @Prop selectedId: string = '';
-  @State collapsed: boolean = true;
+  @State collapsed: boolean = false;
   onAdd: () => void = () => {};
   onSelect: (id: string) => void = () => {};
   onDelete: (id: string) => void = () => {};

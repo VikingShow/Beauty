@@ -18,7 +18,7 @@ import { PlacedArtwork, Position3, Scale3, Quaternion, generateId } from './Gall
 const DOMAIN = 0x0105;
 const TAG = 'GalleryEditor';
 
-export type EditorMode = 'navigate' | 'place' | 'select' | 'transform';
+export type EditorMode = 'navigate' | 'edit';
 
 export class GalleryEditor {
   private scene: Scene | undefined = undefined;
@@ -139,9 +139,11 @@ export class GalleryEditor {
 
       const startPos: Position3 = { x: 0, y: 0, z: 0 };
       if (this.camera !== undefined) {
-        startPos.x = this.camera.position.x - Math.sin(2 * Math.atan2(this.camera.rotation.y, this.camera.rotation.w)) * 2;
-        startPos.y = this.camera.position.y;
-        startPos.z = this.camera.position.z - Math.cos(2 * Math.atan2(this.camera.rotation.y, this.camera.rotation.w)) * 2;
+        const camYaw: number = 2 * Math.atan2(this.camera.rotation.y, this.camera.rotation.w);
+        const distance: number = 3.0;
+        startPos.x = this.camera.position.x + Math.sin(camYaw) * distance;
+        startPos.y = 0;
+        startPos.z = this.camera.position.z + Math.cos(camYaw) * distance;
       }
       importedNode.position = startPos;
 
@@ -158,7 +160,7 @@ export class GalleryEditor {
       };
       this.placedArtworks = this.placedArtworks.concat([artwork]);
       artworkScene.destroy();
-      this.mode = 'place';
+      this.mode = 'edit';
       this.selectedArtwork = artwork;
       this.selectedNode = importedNode;
       hilog.info(DOMAIN, TAG, 'artwork imported: %{public}s', artwork.id);
@@ -174,7 +176,7 @@ export class GalleryEditor {
     const found = this.placedArtworks.find((a: PlacedArtwork) => a.id === id);
     if (found !== undefined) {
       this.selectedArtwork = found;
-      this.mode = 'select';
+      this.mode = 'edit';
       if (this.scene !== undefined && this.artworksRoot !== undefined) {
         const node: Node | null = this.scene.getNodeByPath(found.nodePath);
         if (node !== null) {
@@ -317,6 +319,16 @@ export class GalleryEditor {
     if (this.selectedNode !== null && this.selectedArtwork !== null) {
       this.selectedNode.position = pos;
       this.selectedArtwork.position = pos;
+      this.notifyUpdate();
+    }
+  }
+
+  moveSelectedOnGround(x: number, z: number): void {
+    if (this.selectedNode !== null && this.selectedArtwork !== null) {
+      const currentY: number = this.selectedArtwork.position.y;
+      const newPos: Position3 = { x: x, y: currentY, z: z };
+      this.selectedNode.position = newPos;
+      this.selectedArtwork.position = newPos;
       this.notifyUpdate();
     }
   }
