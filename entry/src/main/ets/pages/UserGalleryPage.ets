@@ -6,6 +6,7 @@ import {
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { GalleryEditor, EditorMode } from '../utils/GalleryEditor';
 import { ModelManager } from '../utils/ModelManager';
+import { LayoutSerializer } from '../utils/LayoutSerializer';
 import { SceneSelector } from '../components/SceneSelector';
 import { ArtworkToolbar } from '../components/ArtworkToolbar';
 import { PropertyPanel } from '../components/PropertyPanel';
@@ -40,6 +41,7 @@ struct UserGalleryPage {
   private editor: GalleryEditor = new GalleryEditor();
   private controller: FirstPersonCameraController = new FirstPersonCameraController(undefined);
   private modelManager: ModelManager = new ModelManager();
+  private layoutSerializer: LayoutSerializer = new LayoutSerializer();
 
   async aboutToAppear(): Promise<void> {
     this.editor.init(getContext(this));
@@ -172,6 +174,25 @@ struct UserGalleryPage {
     this.editor.deselectArtwork();
   }
 
+  private async saveLayout(): Promise<void> {
+    const artworks = this.editor.getPlacedArtworks();
+    const layout = this.layoutSerializer.createEmpty(
+      'My Exhibition ' + Date.now().toString(36),
+      this.selectedSceneId,
+      'gltf'
+    );
+    layout.placedArtworks = artworks;
+    const cam = this.editor.getCamera();
+    if (cam !== undefined) {
+      const camPos = cam.position;
+      const camRot = cam.rotation;
+      layout.cameraPosition = { x: camPos.x, y: camPos.y, z: camPos.z };
+      layout.cameraRotation = { x: camRot.x, y: camRot.y, z: camRot.z, w: camRot.w };
+    }
+    await this.layoutSerializer.save(getContext(this), layout);
+    hilog.info(DOMAIN, 'UserGalleryPage', 'layout saved: %{public}s', layout.id);
+  }
+
   build() {
     Stack() {
       Column()
@@ -296,6 +317,17 @@ struct UserGalleryPage {
             .onClick(() => {
               this.sceneSelectorVisible = true;
             })
+
+          Button('保存布展')
+            .fontSize(13)
+            .height(36)
+            .width(160)
+            .backgroundColor('#1a3a2e')
+            .fontColor('#8ad4a8')
+            .borderColor('#4a8a6a')
+            .borderWidth(1)
+            .enabled(this.sceneReady && this.placedCount > 0)
+            .onClick(() => { this.saveLayout(); })
         }
         .position({ x: '100%', y: '50%' })
         .markAnchor({ x: 180, y: 120 })

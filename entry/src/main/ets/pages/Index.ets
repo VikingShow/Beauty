@@ -102,6 +102,42 @@ struct Index {
           router.pushUrl({ url: 'pages/ChineseGalleryScene' });
         })
 
+        Row({ space: 8 }) {
+          Image($r('app.media.icon_flame'))
+            .width(18).height(18)
+            .fillColor('#c4a6e8')
+          Text('自由布展')
+            .fontSize(13)
+            .fontColor('#b8a6d8')
+            .letterSpacing(4)
+        }
+        .margin({ top: 20, bottom: 4 })
+
+        Button({ type: ButtonType.Capsule }) {
+          Column({ space: 4 }) {
+            Text('Gallery Editor')
+              .fontSize(24)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#0a0a1a')
+              .letterSpacing(4)
+            Text('自定义展厅布展')
+              .fontSize(11)
+              .fontColor('#4a3a6a')
+              .letterSpacing(1)
+          }
+          .padding({ top: 8, bottom: 8 })
+        }
+        .width(340)
+        .height(72)
+        .backgroundColor('#a48aca')
+        .borderColor('#8a6aaa')
+        .borderWidth(1)
+        .borderRadius(14)
+        .enabled(true)
+        .onClick(() => {
+          router.pushUrl({ url: 'pages/UserGalleryPage' });
+        })
+
         Button({ type: ButtonType.Capsule }) {
           Column({ space: 4 }) {
             Text('3DGS Pilot')
