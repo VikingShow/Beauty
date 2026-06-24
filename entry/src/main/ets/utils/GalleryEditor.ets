@@ -7,7 +7,8 @@ import {
   SceneNodeParameters,
   Node,
   RenderContext,
-  RaycastParameters
+  RaycastParameters,
+  RaycastResult
 } from '@kit.ArkGraphics3D';
 import { spatialRender } from '@kit.SpatialReconKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -282,7 +283,7 @@ export class GalleryEditor {
       if (this.artworksRoot !== undefined) {
         params.rootNode = this.artworksRoot;
       }
-      const results = await this.camera.raycast(
+      const results: RaycastResult[] = await this.camera.raycast(
         { x: ndcX, y: ndcY },
         params
       );
@@ -293,6 +294,30 @@ export class GalleryEditor {
     } catch (e) {
       hilog.warn(DOMAIN, TAG, 'raycast failed: %{public}s', JSON.stringify(e));
       return null;
+    }
+  }
+
+  async raycastHitPosition(screenX: number, screenY: number, viewWidth: number, viewHeight: number): Promise<Position3 | null> {
+    if (this.camera === undefined) return null;
+    const ndcX: number = (screenX / viewWidth) * 2 - 1;
+    const ndcY: number = 1 - (screenY / viewHeight) * 2;
+    try {
+      const results: RaycastResult[] = await this.camera.raycast({ x: ndcX, y: ndcY }, {});
+      if (results.length > 0) {
+        return results[0].hitPosition;
+      }
+      return null;
+    } catch (e) {
+      hilog.warn(DOMAIN, TAG, 'raycastHitPosition failed: %{public}s', JSON.stringify(e));
+      return null;
+    }
+  }
+
+  moveSelectedToPosition(pos: Position3): void {
+    if (this.selectedNode !== null && this.selectedArtwork !== null) {
+      this.selectedNode.position = pos;
+      this.selectedArtwork.position = pos;
+      this.notifyUpdate();
     }
   }
 

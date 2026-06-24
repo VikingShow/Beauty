@@ -8,9 +8,10 @@ import { GalleryEditor, EditorMode } from '../utils/GalleryEditor';
 import { ModelManager } from '../utils/ModelManager';
 import { SceneSelector } from '../components/SceneSelector';
 import { ArtworkToolbar } from '../components/ArtworkToolbar';
+import { PropertyPanel } from '../components/PropertyPanel';
 import { Joystick } from '../components/Joystick';
 import { FirstPersonCameraController } from '../controllers/FirstPersonCameraController';
-import { PlacedArtwork, SceneType } from '../utils/GalleryTypes';
+import { PlacedArtwork, SceneType, Position3 } from '../utils/GalleryTypes';
 
 const DOMAIN = 0x0105;
 
@@ -34,6 +35,7 @@ struct UserGalleryPage {
   @State private rotY: number = 0;
   @State private scaleVal: number = 1.0;
   @State private propertyVisible: boolean = false;
+  @State private dragging: boolean = false;
 
   private editor: GalleryEditor = new GalleryEditor();
   private controller: FirstPersonCameraController = new FirstPersonCameraController(undefined);
@@ -154,6 +156,17 @@ struct UserGalleryPage {
     this.editor.deselectArtwork();
   }
 
+  private async handleDragMove(e: GestureEvent): Promise<void> {
+    const hitPos: Position3 | null = await this.editor.raycastHitPosition(
+      this.tapX + e.offsetX,
+      this.tapY + e.offsetY,
+      100, 100
+    );
+    if (hitPos !== null) {
+      this.editor.moveSelectedToPosition(hitPos);
+    }
+  }
+
   private confirmPlace(): void {
     this.editor.setMode('navigate');
     this.editor.deselectArtwork();
@@ -176,13 +189,25 @@ struct UserGalleryPage {
             GestureGroup(GestureMode.Parallel,
               PanGesture({ fingers: 1 })
                 .onActionStart(() => {
-                  this.controller.onPanStart();
+                  if (this.editorMode === 'select' || this.editorMode === 'place') {
+                    this.dragging = true;
+                  } else {
+                    this.controller.onPanStart();
+                  }
                 })
                 .onActionUpdate((e: GestureEvent) => {
-                  this.controller.onPanUpdate(e.offsetX, e.offsetY);
+                  if (this.dragging) {
+                    this.handleDragMove(e);
+                  } else {
+                    this.controller.onPanUpdate(e.offsetX, e.offsetY);
+                  }
                 })
                 .onActionEnd(() => {
-                  this.controller.onPanEnd();
+                  if (this.dragging) {
+                    this.dragging = false;
+                  } else {
+                    this.controller.onPanEnd();
+                  }
                 })
             )
           )
@@ -276,123 +301,23 @@ struct UserGalleryPage {
         .markAnchor({ x: 180, y: 120 })
 
         if (this.propertyVisible && this.selectedName !== '') {
-          Column({ space: 8 }) {
-            Text(this.selectedName)
-              .fontSize(14)
-              .fontColor('#f5e6c8')
-              .fontWeight(FontWeight.Medium)
-
-            Row({ space: 6 }) {
-              Text('X')
-                .fontSize(11)
-                .fontColor('#8a8a9a')
-                .width(16)
-              Button('-')
-                .width(28).height(28).fontSize(12)
-                .backgroundColor('#1a1a2e').fontColor('#d4b678')
-                .onClick(() => { this.editor.nudgeSelected(-0.1, 0, 0); })
-              Text(this.posX.toFixed(2))
-                .fontSize(11).fontColor('#d4b678').width(50).textAlign(TextAlign.Center)
-              Button('+')
-                .width(28).height(28).fontSize(12)
-                .backgroundColor('#1a1a2e').fontColor('#d4b678')
-                .onClick(() => { this.editor.nudgeSelected(0.1, 0, 0); })
-            }
-
-            Row({ space: 6 }) {
-              Text('Y')
-                .fontSize(11)
-                .fontColor('#8a8a9a')
-                .width(16)
-              Button('-')
-                .width(28).height(28).fontSize(12)
-                .backgroundColor('#1a1a2e').fontColor('#d4b678')
-                .onClick(() => { this.editor.nudgeSelected(0, -0.1, 0); })
-              Text(this.posY.toFixed(2))
-                .fontSize(11).fontColor('#d4b678').width(50).textAlign(TextAlign.Center)
-              Button('+')
-                .width(28).height(28).fontSize(12)
-                .backgroundColor('#1a1a2e').fontColor('#d4b678')
-                .onClick(() => { this.editor.nudgeSelected(0, 0.1, 0); })
-            }
-
-            Row({ space: 6 }) {
-              Text('Z')
-                .fontSize(11)
-                .fontColor('#8a8a9a')
-                .width(16)
-              Button('-')
-                .width(28).height(28).fontSize(12)
-                .backgroundColor('#1a1a2e').fontColor('#d4b678')
-                .onClick(() => { this.editor.nudgeSelected(0, 0, -0.1); })
-              Text(this.posZ.toFixed(2))
-                .fontSize(11).fontColor('#d4b678').width(50).textAlign(TextAlign.Center)
-              Button('+')
-                .width(28).height(28).fontSize(12)
-                .backgroundColor('#1a1a2e').fontColor('#d4b678')
-                .onClick(() => { this.editor.nudgeSelected(0, 0, 0.1); })
-            }
-
-            Row({ space: 6 }) {
-              Text('旋转')
-                .fontSize(11)
-                .fontColor('#8a8a9a')
-                .width(30)
-              Button('-15°')
-                .height(28).fontSize(11)
-                .backgroundColor('#1a1a2e').fontColor('#d4b678')
-                .onClick(() => { this.editor.rotateSelectedY(-15); })
-              Text(this.rotY + '°')
-                .fontSize(11).fontColor('#d4b678').width(50).textAlign(TextAlign.Center)
-              Button('+15°')
-                .height(28).fontSize(11)
-                .backgroundColor('#1a1a2e').fontColor('#d4b678')
-                .onClick(() => { this.editor.rotateSelectedY(15); })
-            }
-
-            Row({ space: 6 }) {
-              Text('缩放')
-                .fontSize(11)
-                .fontColor('#8a8a9a')
-                .width(30)
-              Button('-10%')
-                .height(28).fontSize(11)
-                .backgroundColor('#1a1a2e').fontColor('#d4b678')
-                .onClick(() => { this.editor.scaleSelected(0.9); })
-              Text(this.scaleVal.toFixed(2) + 'x')
-                .fontSize(11).fontColor('#d4b678').width(50).textAlign(TextAlign.Center)
-              Button('+10%')
-                .height(28).fontSize(11)
-                .backgroundColor('#1a1a2e').fontColor('#d4b678')
-                .onClick(() => { this.editor.scaleSelected(1.1); })
-            }
-
-            Row({ space: 8 }) {
-              if (this.editorMode === 'place') {
-                Button('确认放置')
-                  .height(32).fontSize(13)
-                  .backgroundColor('#8aaa6a').fontColor('#0a0a1a')
-                  .onClick(() => { this.confirmPlace(); })
-              }
-
-              Button('删除')
-                .height(32).fontSize(13)
-                .backgroundColor('#ff6b6b44').fontColor('#ff6b6b')
-                .borderColor('#ff6b6b').borderWidth(1)
-                .onClick(() => { this.editor.removeSelectedArtwork(); })
-
-              Button('取消')
-                .height(32).fontSize(13)
-                .backgroundColor('#1a1a2e').fontColor('#8a8a9a')
-                .onClick(() => { this.editor.deselectArtwork(); })
-            }
-          }
-          .padding(14)
-          .backgroundColor('#E60f0f1f')
-          .borderRadius(12)
-          .border({ width: 1, color: '#d4b67888', style: BorderStyle.Solid, radius: 12 })
-          .position({ x: '50%', y: '100%' })
-          .markAnchor({ x: 120, y: 320 })
+          PropertyPanel({
+            name: this.selectedName,
+            posX: this.posX,
+            posY: this.posY,
+            posZ: this.posZ,
+            rotY: this.rotY,
+            scaleVal: this.scaleVal,
+            editorMode: this.editorMode,
+            onNudge: (dx: number, dy: number, dz: number) => { this.editor.nudgeSelected(dx, dy, dz); },
+            onRotate: (deg: number) => { this.editor.rotateSelectedY(deg); },
+            onScale: (factor: number) => { this.editor.scaleSelected(factor); },
+            onConfirm: () => { this.confirmPlace(); },
+            onDelete: () => { this.editor.removeSelectedArtwork(); },
+            onCancel: () => { this.editor.deselectArtwork(); }
+          })
+            .position({ x: '50%', y: '100%' })
+            .markAnchor({ x: 120, y: 320 })
         }
       }
 
